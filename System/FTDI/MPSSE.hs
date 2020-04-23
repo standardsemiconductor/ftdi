@@ -87,7 +87,7 @@ instance Applicative Command where
       where
         parse bs =
             let (bs1, bs2) = BS.splitAt b bs
-            in (c bs1) (c' bs2)
+            in c bs1 (c' bs2)
     {-# INLINE (<*>) #-}
 
 opCode :: Word8 -> Command ()
@@ -113,7 +113,7 @@ writeByteString bs = () <$ transfer (BSB.byteString bs) 0
 {-# INLINE writeByteString #-}
 
 readN :: Int -> Command BS.ByteString
-readN n = transfer mempty n
+readN = transfer mempty
 {-# INLINE readN #-}
 
 -------------------------------------------------------------------------------
@@ -251,8 +251,7 @@ gpioBits Gpios{..} =
         b _ False = 0
 
 setGpioDirValue :: GpioBank -> Gpios (Direction () Bool) -> Command ()
-setGpioDirValue bank vals = do
-    opCode o *> byte valueByte *> byte dirByte
+setGpioDirValue bank vals = opCode o *> byte valueByte *> byte dirByte
   where o = case bank of
               BankL -> 0x80
               BankH -> 0x82

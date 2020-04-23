@@ -19,7 +19,6 @@ import Control.Applicative       ( Applicative, (<$>), Alternative )
 import Control.Exception         ( Exception, bracket, throwIO )
 import Control.Monad             ( Functor
                                  , Monad, (>>=), (>>), (=<<), return
-                                 , liftM
                                  , MonadPlus
                                  )
 import Control.Monad.Fix         ( MonadFix )
@@ -45,6 +44,7 @@ import Prelude                   ( Enum, succ
                                  , fromEnum, fromIntegral
                                  , realToFrac, floor, ceiling
                                  , div, error
+                                 , fmap
                                  )
 import System.IO                 ( IO )
 import Text.Read                 ( Read )
@@ -478,8 +478,8 @@ readData ifHnd checkStop numBytes = ChunkedReaderT $
                in lift checkStop >>= \stop →
                   if stop
                   then put BS.empty >> return xs
-                  else liftM (xs ⊕)
-                             (readLoop $ readNumBytes - receivedDataBytes)
+                  else fmap (xs ⊕)
+                            (readLoop $ readNumBytes - receivedDataBytes)
           else -- We might have received too much data, since we can only
                -- request multiples of 'packetSize' bytes. Split the byte
                -- string at such an index that the first part contains
@@ -510,11 +510,10 @@ readData ifHnd checkStop numBytes = ChunkedReaderT $
 readBulk ∷ InterfaceHandle
          → Int -- ^Number of bytes to read
          → IO (ByteString, USB.Status)
-readBulk ifHnd numBytes =
+readBulk ifHnd =
     USB.readBulk (devHndUSB $ ifHndDevHnd ifHnd)
                  (interfaceEndPointIn $ ifHndInterface ifHnd)
                  (devHndTimeout $ ifHndDevHnd ifHnd)
-                 numBytes
 
 -- |Perform a bulk write.
 --
@@ -550,7 +549,7 @@ genControl usbCtrl index ifHnd request value =
     usbCtrl usbHnd setup (devHndTimeout devHnd)
     where devHnd = ifHndDevHnd ifHnd
           usbHnd = devHndUSB devHnd
-          index' = index .|. (interfaceIndex $ ifHndInterface ifHnd)
+          index' = index .|. interfaceIndex (ifHndInterface ifHnd)
           setup  = USB.ControlSetup { USB.controlSetupRequestType = USB.Vendor
                                     , USB.controlSetupRecipient   = USB.ToDevice
                                     , USB.controlSetupRequest     = request
@@ -759,9 +758,7 @@ marshalModemStatus ms = (a, b)
                        ]
 
       mkByte ∷ [(Int, ModemStatus → Bool)] → Word8
-      mkByte ts = foldr (\(n, f) x → if f ms then setBit x n else x)
-                        0
-                        ts
+      mkByte = foldr (\(n, f) x → if f ms then setBit x n else x) 0
 
 unmarshalModemStatus ∷ Word8 → Word8 → ModemStatus
 unmarshalModemStatus a b =

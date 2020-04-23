@@ -65,7 +65,7 @@ prop_unmarshalModemStatus =
     where ignoreBits = first (.&. 0xf0)
 
 prop_baudRateError ∷ RealFrac α ⇒ α → (ChipType → BaudRate α → Bool)
-prop_baudRateError maxError = \chip baudRate →
+prop_baudRateError maxError chip baudRate =
     let b = nearestBaudRate chip baudRate
         e = abs (b - baudRate) ÷ baudRate
     in unBaudRate e ≤ maxError
