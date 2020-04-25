@@ -18,7 +18,6 @@ module System.FTDI
     , openDevice
     , closeDevice
     , withDeviceHandle
-
       -- *Interface handles
     , InterfaceHandle
     , getDeviceHandle
