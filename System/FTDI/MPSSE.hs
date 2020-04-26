@@ -28,6 +28,7 @@ module System.FTDI.MPSSE
     , BitOrder(..)
     , ClockEdge(..)
     , flush
+    , readB
       -- ** Pausing
     , waitOnHigh
     , waitOnLow
@@ -261,6 +262,10 @@ setGpioDirValue bank vals = opCode o *> byte valueByte *> byte dirByte
         !valueByte = gpioBits $ fmap f vals
           where f (Output True) = True
                 f _             = False
+
+readB :: GpioBank -> Command BS.ByteString
+readB BankL = opCode 0x81 *> readN 1
+readB BankH = opCode 0x83 *> readN 1
 
 -------------------------------------------------------------------------------
 -- Transfers
