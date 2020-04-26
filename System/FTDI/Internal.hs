@@ -315,7 +315,7 @@ openInterface devHnd i =
         mOutEp  = headMay ∘ snd =<< mInOutEps
         headMay = (V.!? 0)
     in maybe (throwIO InterfaceNotFound)
-             ( \ifHnd → do USB.detachKernelDriver (devHndUSB devHnd) (interfaceToUSB i)
+             ( \ifHnd → do --USB.detachKernelDriver (devHndUSB devHnd) (interfaceToUSB i)
                            USB.claimInterface (devHndUSB devHnd) (interfaceToUSB i)
                            return ifHnd
              )
@@ -332,11 +332,18 @@ closeInterface ∷ InterfaceHandle → IO ()
 closeInterface ifHnd = do
   USB.releaseInterface (devHndUSB $ ifHndDevHnd ifHnd)
                        (interfaceToUSB $ ifHndInterface ifHnd)
-  USB.attachKernelDriver (devHndUSB $ ifHndDevHnd ifHnd)
-                         (interfaceToUSB $ ifHndInterface ifHnd)
+--  USB.attachKernelDriver (devHndUSB $ ifHndDevHnd ifHnd)
+--                         (interfaceToUSB $ ifHndInterface ifHnd)
 
 withInterfaceHandle ∷ DeviceHandle → Interface → (InterfaceHandle → IO α) → IO α
 withInterfaceHandle h i = bracket (openInterface h i) closeInterface
+
+-------------------------------------------------------------------------------
+-- Kernel drivers
+-------------------------------------------------------------------------------
+withDetachedKernelDriver :: DeviceHandle -> Interface -> IO a -> IO a
+withDetachedKernelDriver devHndl i =
+  USB.withDetachedKernelDriver (devHndUSB devHndl) (interfaceToUSB i)
 
 -------------------------------------------------------------------------------
 -- Data transfer

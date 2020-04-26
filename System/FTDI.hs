@@ -25,7 +25,8 @@ module System.FTDI
     , openInterface
     , closeInterface
     , withInterfaceHandle
-
+      -- *Kernel drivers
+    , withDetachedKernelDriver
       -- *Data transfer
     , ChunkedReaderT
     , runChunkedReaderT
