@@ -45,6 +45,7 @@ import Prelude                   ( Enum, succ
                                  , realToFrac, floor, ceiling
                                  , div, error
                                  , fmap
+                                 , print
                                  )
 import System.IO                 ( IO )
 import Text.Read                 ( Read )
@@ -270,8 +271,7 @@ setTimeout devHnd timeout = devHnd {devHndTimeout = timeout}
 openDevice ∷ Device → IO DeviceHandle
 openDevice dev = do
   handle ← USB.openDevice $ devUSB dev
-  USB.detachKernelDriver handle 0
-  USB.setConfig handle $ Just $ USB.configValue $ devUSBConf dev
+--  USB.setConfig handle $ Just $ USB.configValue $ devUSBConf dev
   return DeviceHandle { devHndUSB     = handle
                       , devHndDev     = dev
                       , devHndTimeout = defaultTimeout
@@ -279,7 +279,7 @@ openDevice dev = do
 
 -- |Release a device handle.
 closeDevice ∷ DeviceHandle → IO ()
-closeDevice = USB.closeDevice ∘ devHndUSB
+closeDevice = USB.closeDevice . devHndUSB
 
 -- |The recommended way to acquire a handle. Ensures that the handle
 -- is released when the monadic computation is completed. Even, or
@@ -316,7 +316,8 @@ openInterface devHnd i =
         mOutEp  = headMay ∘ snd =<< mInOutEps
         headMay = (V.!? 0)
     in maybe (throwIO InterfaceNotFound)
-             ( \ifHnd → do USB.claimInterface (devHndUSB devHnd) (interfaceToUSB i)
+             ( \ifHnd → do USB.detachKernelDriver (devHndUSB devHnd) (interfaceToUSB i)
+                           USB.claimInterface (devHndUSB devHnd) (interfaceToUSB i)
                            return ifHnd
              )
              $ do inEp  ← mInEp
@@ -329,8 +330,11 @@ openInterface devHnd i =
                      }
 
 closeInterface ∷ InterfaceHandle → IO ()
-closeInterface ifHnd = USB.releaseInterface (devHndUSB $ ifHndDevHnd ifHnd)
-                                            (interfaceToUSB $ ifHndInterface ifHnd)
+closeInterface ifHnd = do
+  USB.releaseInterface (devHndUSB $ ifHndDevHnd ifHnd)
+                       (interfaceToUSB $ ifHndInterface ifHnd)
+  USB.attachKernelDriver (devHndUSB $ ifHndDevHnd ifHnd)
+                         (interfaceToUSB $ ifHndInterface ifHnd)
 
 withInterfaceHandle ∷ DeviceHandle → Interface → (InterfaceHandle → IO α) → IO α
 withInterfaceHandle h i = bracket (openInterface h i) closeInterface
