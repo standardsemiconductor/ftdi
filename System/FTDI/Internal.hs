@@ -270,7 +270,7 @@ setTimeout devHnd timeout = devHnd {devHndTimeout = timeout}
 openDevice ∷ Device → IO DeviceHandle
 openDevice dev = do
   handle ← USB.openDevice $ devUSB dev
-  USB.detachKernelDriver handle Interface_A
+  USB.detachKernelDriver handle 0
   USB.setConfig handle $ Just $ USB.configValue $ devUSBConf dev
   return DeviceHandle { devHndUSB     = handle
                       , devHndDev     = dev
