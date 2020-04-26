@@ -44,8 +44,7 @@ import Prelude                   ( Enum, succ
                                  , fromEnum, fromIntegral
                                  , realToFrac, floor, ceiling
                                  , div, error
-                                 , fmap
-                                 , print
+                                 , fmap, (.)
                                  )
 import System.IO                 ( IO )
 import Text.Read                 ( Read )
