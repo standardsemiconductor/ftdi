@@ -39,19 +39,18 @@ library
 
 -------------------------------------------------------------------------------
 
-test-suite test
-  main-is: test.hs
-  type: exitcode-stdio-1.0
-  other-modules: System.FTDI
-               , System.FTDI.Internal
-               , System.FTDI.Properties
-               , System.FTDI.Utils
-               , System.FTDI.Utils.Properties
-  ghc-options: -Wall -fno-warn-orphans
-
-  build-depends: derive                     >= 2.3   && < 2.7
-               , QuickCheck                 >= 2.11  && < 2.13
-               , random                     >= 1.0.0 && < 1.2
-               , tagged                     >= 0.8   && < 0.9
-               , test-framework             >= 0.8   && < 0.9
-               , test-framework-quickcheck2 >= 0.3   && < 0.4
+-- test-suite test
+--  main-is: test.hs
+--  type: exitcode-stdio-1.0
+--  other-modules: System.FTDI
+--               , System.FTDI.Internal
+--               , System.FTDI.Properties
+--               , System.FTDI.Utils
+--               , System.FTDI.Utils.Properties
+--  ghc-options: -Wall -fno-warn-orphans
+--
+--  build-depends: QuickCheck                 >= 2.11  && < 2.13
+--               , random                     >= 1.0.0 && < 1.2
+--               , tagged                     >= 0.8   && < 0.9
+--               , test-framework             >= 0.8   && < 0.9
+--               , test-framework-quickcheck2 >= 0.3   && < 0.4
