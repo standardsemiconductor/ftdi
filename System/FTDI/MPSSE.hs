@@ -51,7 +51,7 @@ import Numeric (showHex)
 
 import qualified Data.ByteString as BS
 import qualified Data.ByteString.Lazy as BSL
-import qualified Data.ByteString.Lazy.Builder as BSB
+import qualified Data.ByteString.Builder as BSB
 
 import Control.Concurrent.Async
 
