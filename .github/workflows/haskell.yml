@@ -5,21 +5,33 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
+  schedule:
+    # run at the start of every day
+    - cron: '0 0 * * *'
 
 jobs:
   build:
-
-    runs-on: ubuntu-latest
-
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        ghc: ['8.6.5', '8.8.4', '8.10.3']
+        cabal: ['3.0.0.0', '3.2.0.0']
+        os: [ubuntu-18.04, ubuntu-20.04]
+    name: ${{ matrix.os }} GHC ${{ matrix.ghc }} Cabal ${{ matrix.cabal }}
     steps:
-    - uses: actions/checkout@v2
-    - uses: actions/setup-haskell@v1
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    - name: Setup Haskell
+      uses: haskell/actions/setup@v1
       with:
-        ghc-version: '8.8.2'
-        cabal-version: '3.0'
+        ghc-version: ${{ matrix.ghc }}
+        cabal-version: ${{ matrix.cabal }}
+
     - name: Install dependencies
       run: |
-        sudo apt install libusb-1.0-0 libusb-1.0-0-dev
+        sudo apt update
+        sudo apt install libusb-1.0-0-dev
         cabal update
     - name: Build
       run: |
