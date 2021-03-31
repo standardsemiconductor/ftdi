@@ -23,10 +23,6 @@ import Data.Function.Unicode ( (∘) )
 import Data.Ord.Unicode      ( (≤) )
 import Prelude.Unicode       ( (÷) )
 
--- derive
-import Data.Derive.Arbitrary ( makeArbitrary )
-import Data.DeriveTH         ( derive )
-
 -- ftdi
 import System.FTDI           ( ModemStatus(..), ChipType(..)
                              , BaudRate(..), nearestBaudRate
@@ -43,6 +39,8 @@ import Test.QuickCheck       ( Arbitrary, arbitrary, shrink, choose
 -- random
 import System.Random         ( Random )
 
+-- generic-random
+import Generic.Random        ( genericArbitrary, uniform )
 
 -------------------------------------------------------------------------------
 -- Properties
@@ -97,5 +95,9 @@ instance (Random α, Num α, Arbitrary α) ⇒ Arbitrary (BaudRate α) where
                           ]
     shrink = map BaudRate ∘ shrink ∘ unBaudRate
 
-$( derive makeArbitrary ''ModemStatus )
-$( derive makeArbitrary ''ChipType )
+instance Arbitrary ModemStatus where
+  arbitrary = genericArbitrary uniform
+
+instance Arbitrary ChipType where
+  arbitrary = genericArbitrary uniform
+

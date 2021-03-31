@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP
            , DeriveDataTypeable
+           , DeriveGeneric
            , FlexibleContexts
            , GeneralizedNewtypeDeriving
            , NoImplicitPrelude
@@ -36,6 +37,7 @@ import Data.Ord                  ( Ord, (<), (>), compare )
 import Data.Tuple                ( fst, snd )
 import Data.Typeable             ( Typeable )
 import Data.Word                 ( Word8, Word16 )
+import GHC.Generics              ( Generic )
 import Prelude                   ( Enum, succ
                                  , Bounded, minBound, maxBound
                                  , Num, (+), (-), Integral, (^)
@@ -173,7 +175,7 @@ data ChipType = ChipType_AM
               | ChipType_R
               | ChipType_2232H
               | ChipType_4232H
-                deriving (Enum, Eq, Ord, Show, Data, Typeable)
+                deriving (Enum, Eq, Ord, Show, Data, Typeable, Generic)
 
 getChipType ∷ Device → ChipType
 getChipType = devChipType
@@ -741,7 +743,7 @@ data ModemStatus = ModemStatus
     , msTransmitterEmpty ∷ Bool
       -- |Error in RCVR FIFO
     , msErrorInReceiverFIFO ∷ Bool
-    } deriving (Eq, Ord, Show, Data, Typeable)
+    } deriving (Eq, Ord, Show, Data, Typeable, Generic)
 
 marshalModemStatus ∷ ModemStatus → (Word8, Word8)
 marshalModemStatus ms = (a, b)
