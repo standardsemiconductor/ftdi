@@ -430,7 +430,7 @@ completed.
 If you need to make a lot of small requests then a small latency can actually
 improve performance.
 
-Modem status bytes are filtered from the result. Every packet send by the FTDI
+Modem status bytes are filtered from the result. Every packet sent by the FTDI
 chip contains 2 modem status bytes. They are not part of the data and do not
 count for the number of bytes read. They will not appear in the result.
 
@@ -655,7 +655,7 @@ setBitMode ifHnd bitMask bitMode = control ifHnd reqSetBitMode value
 -- given by the 'BaudRate' instance for 'Bounded'. The divisor
 -- consists of an integral part and a fractional part. Both parts are
 -- limited in range. As a result not all baud rates can be accurately
--- represented. This function returns the nearest representable baud
+          -- represented. This function returns the nearest representable baud
 -- rate relative to the requested baud rate. According to FTDI
 -- documentation the maximum allowed error is 3%. The nearest
 -- representable baud rate can be calculated with the

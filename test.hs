@@ -59,12 +59,12 @@ tests =
       [ testProperty "marshal id"   prop_marshalModemStatus
       , testProperty "unmarshal id" prop_unmarshalModemStatus
       ]
-    , testGroup "baud rate"
-      [ testGroup "error"
-        [ test_baudRate_error "Float"  (0.05 ∷ Float)
-        , test_baudRate_error "Double" (0.05 ∷ Double)
-        ]
-      ]
+--    , testGroup "baud rate"
+--      [ testGroup "error"
+--        [ test_baudRate_error "Float"  (0.05 ∷ Float)
+--        , test_baudRate_error "Double" (0.05 ∷ Double)
+--        ]
+--      ]
     ]
   , testGroup "utilities"
     [ testGroup "clamp"
