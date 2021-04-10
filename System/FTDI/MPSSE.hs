@@ -9,6 +9,7 @@
 module System.FTDI.MPSSE
     ( Command
     , run
+    , Failure(..)
 
       -- * Clock divisor
     , setClockDivisor
