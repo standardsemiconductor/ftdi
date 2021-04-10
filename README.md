@@ -1,5 +1,5 @@
 # ftdi
-[![Haskell CI](https://github.com/standardsemiconductor/ftdi/workflows/Haskell%20CI/badge.svg?branch=master)](https://github.com/standardsemiconductor/ftdi/.github/workflows/haskell.yml)
+[![Haskell CI](https://github.com/standardsemiconductor/ftdi/workflows/Haskell%20CI/badge.svg?branch=master)](https://github.com/standardsemiconductor/ftdi/actions/workflows/haskell.yml)
 [![Hackage][hackage-badge]][hackage]
 [![Hackage Dependencies][hackage-deps-badge]][hackage-deps]
 
