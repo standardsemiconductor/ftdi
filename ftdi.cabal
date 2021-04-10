@@ -17,7 +17,7 @@ extra-source-files: CHANGELOG.md, README.md
 
 source-repository head
   type:     git
-  location: http://github.com/standardsemiconductor/ftdi
+  location: https://github.com/standardsemiconductor/ftdi
 
 
 -------------------------------------------------------------------------------
