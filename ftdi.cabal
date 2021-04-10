@@ -8,7 +8,7 @@ maintainer:    David Cox <standardsemiconductor@gmail.com
 copyright:     (c) 2009, 2010 Roel van Dijk, (c) 2018 Ben Gamari, (c) 2021 David Cox
 license:       BSD3
 license-file:  LICENSE
-category:      System
+category:      System, Hardware
 synopsis:      A thin layer over USB to communicate with FTDI chips
 description:
   This library enables you to communicate with FTDI devices. It is
