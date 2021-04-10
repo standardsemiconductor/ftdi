@@ -28,7 +28,7 @@ module System.FTDI.MPSSE
     , BitOrder(..)
     , ClockEdge(..)
     , flush
-    , readB
+
       -- ** Pausing
     , waitOnHigh
     , waitOnLow
@@ -43,6 +43,7 @@ module System.FTDI.MPSSE
     , Direction(..)
     , GpioBank(..)
     , setGpioDirValue
+    , getGpioValue
     ) where
 
 import Data.Bits
@@ -193,13 +194,16 @@ setClockDivisor n = opCode 0x86 *> word16 n
 disableClkDivBy5 :: Command ()
 disableClkDivBy5 = opCode 0x8a
 
--- | Enable clock divider on for compatibility with FT2232D.
+-- | Enable clock divide by 5 to allow for backward compatibility with FT2232D.
 enableClkDivBy5 :: Command ()
 enableClkDivBy5 = opCode 0x8b
 
+-- | Enables 3 phase data clocking.
+-- Used by I2C interfaces to allow data on both clock edges.
 enable3PhaseClocking :: Command ()
 enable3PhaseClocking = opCode 0x8c
 
+-- | Disables 3 phase data clocking.
 disable3PhaseClocking :: Command ()
 disable3PhaseClocking = opCode 0x8d
 
@@ -251,6 +255,7 @@ gpioBits Gpios{..} =
   where b n True  = bit n
         b _ False = 0
 
+-- | Set the direction and logic state of the pins
 setGpioDirValue :: GpioBank -> Gpios (Direction () Bool) -> Command ()
 setGpioDirValue bank vals = opCode o *> byte valueByte *> byte dirByte
   where o = case bank of
@@ -263,14 +268,16 @@ setGpioDirValue bank vals = opCode o *> byte valueByte *> byte dirByte
           where f (Output True) = True
                 f _             = False
 
-readB :: GpioBank -> Command BS.ByteString
-readB BankL = opCode 0x81 *> readN 1
-readB BankH = opCode 0x83 *> readN 1
+-- | Read the current state of the pins in the bank and send back 1 byte
+getGpioValue :: GpioBank -> Command BS.ByteString
+getGpioValue BankL = opCode 0x81 *> readN 1
+getGpioValue BankH = opCode 0x83 *> readN 1
 
 -------------------------------------------------------------------------------
 -- Transfers
 -------------------------------------------------------------------------------
 
+-- | This will make the chip flush its buffer back to the PC.
 flush :: Command ()
 flush = opCode 0x87
 
