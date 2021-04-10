@@ -3,7 +3,7 @@
 [![Hackage][hackage-badge]][hackage]
 [![Hackage Dependencies][hackage-deps-badge]][hackage-deps]
 
-A thin layer over [USB](https://hackage.haskell.org/package/usb) to communicate with FTDI chips.
+This library enables you to communicate with FTDI devices. It is implemented as a lightweight wrapper around the [usb](https://hackage.haskell.org/package/usb) library.
 
 ## References
 * [FTDI Website](https://ftdichip.com/)
