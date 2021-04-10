@@ -1,5 +1,3 @@
-{-# LANGUAGE DeriveFunctor       #-}
-{-# LANGUAGE DeriveFoldable      #-}
 {-# LANGUAGE DeriveTraversable   #-}
 {-# LANGUAGE RecordWildCards     #-}
 {-# LANGUAGE MultiWayIf          #-}
@@ -177,8 +175,9 @@ run ifHnd (Command cmd n parse) = do
 
     resp <- readLoop 0 mempty
     (written, _writeStatus) <- wait writer
-    if | written /= BS.length cmd'  -> return $ Left $ WriteTimedOut cmd' written
-       | otherwise                  -> return resp
+    return $ if written /= BS.length cmd'
+      then Left $ WriteTimedOut cmd' written
+      else resp
 
 {-# INLINE run #-}
 
