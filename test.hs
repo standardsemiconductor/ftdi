@@ -13,7 +13,7 @@ import Data.Int        ( Int )
 import Data.Ord        ( Ord )
 import Data.Word       ( Word8 )
 import Prelude         ( Num, Integral, Integer, Bounded
-                       , RealFrac, Float, Double
+                       , RealFrac
                        )
 import System.IO       ( IO )
 import Text.Show       ( Show )
