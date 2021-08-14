@@ -1,6 +1,5 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving
            , StandaloneDeriving
-           , TemplateHaskell
            , UnicodeSyntax
   #-}
 

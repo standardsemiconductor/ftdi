@@ -54,6 +54,7 @@ import qualified Data.ByteString.Lazy as BSL
 import qualified Data.ByteString.Builder as BSB
 
 import Control.Concurrent.Async
+import Control.Monad (void)
 
 import qualified System.FTDI as FTDI
 import System.FTDI (InterfaceHandle)
@@ -96,11 +97,11 @@ opCode = byte
 {-# INLINE opCode #-}
 
 byte :: Word8 -> Command ()
-byte o = () <$ transfer (BSB.word8 o) 0
+byte o = void $ transfer (BSB.word8 o) 0
 {-# INLINE byte #-}
 
 word16 :: Word16 -> Command ()
-word16 o = () <$ transfer (BSB.word16LE o) 0
+word16 o = void $ transfer (BSB.word16LE o) 0
 {-# INLINE word16 #-}
 
 transfer :: BSB.Builder -> Int -> Command BS.ByteString
@@ -110,7 +111,7 @@ transfer b n = Command { command = b
 {-# INLINE transfer #-}
 
 writeByteString :: BS.ByteString -> Command ()
-writeByteString bs = () <$ transfer (BSB.byteString bs) 0
+writeByteString bs = void $ transfer (BSB.byteString bs) 0
 {-# INLINE writeByteString #-}
 
 readN :: Int -> Command BS.ByteString

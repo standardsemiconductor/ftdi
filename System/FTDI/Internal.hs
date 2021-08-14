@@ -358,21 +358,21 @@ newtype ChunkedReaderT m α = ChunkedReaderT {unCR ∷ StateT ByteString m α}
              , MonadFix
              )
 
-{-| Run the ChunkedReaderT given an initial state.
+{-| Run the 'ChunkedReaderT' given an initial state.
 
 The initial state represents excess bytes carried over from a previous
-run. When invoking runChunkedReaderT for the first time you can safely pass the
+run. When invoking 'runChunkedReaderT' for the first time you can safely pass the
 'BS.empty' bytestring as the initial state.
 
 A contrived example showing how you can manually thread the excess bytes
-through subsequent invocations of runChunkedReaderT:
+through subsequent invocations of 'runChunkedReaderT':
 
 @
-  example &#x2237; 'InterfaceHandle' &#x2192; IO ()
+  example :: 'InterfaceHandle' -> IO ()
   example ifHnd = do
-    (packets1, rest1) &#x2190; runChunkedReaderT ('readData' ifHnd (return 'False') 400) 'BS.empty'
+    (packets1, rest1) <- runChunkedReaderT ('readData' ifHnd (return 'False') 400) 'BS.empty'
     print $ 'BS.concat' packets1
-    (packets2, rest2) &#x2190; runChunkedReaderT ('readData' ifHnd (return 'False') 200) rest1
+    (packets2, rest2) <- runChunkedReaderT ('readData' ifHnd (return 'False') 200) rest1
     print $ 'BS.concat' packets2
 @
 
@@ -380,12 +380,12 @@ However, it is much easier to let 'ChunkedReaderT's monad instance handle the
 plumbing:
 
 @
-  example &#x2237; 'InterfaceHandle' &#x2192; IO ()
+  example :: 'InterfaceHandle' -> IO ()
   example ifHnd =
-    let reader = do packets1 &#x2190; 'readData' ifHnd (return 'False') 400
-                    liftIO $ print $ 'BS.concat' packets1
-                    packets2 &#x2190; 'readData' ifHnd (return 'False') 200
-                    liftIO $ print $ 'BS.concat' packets1
+    let reader = do packets1 <- 'readData' ifHnd (return 'False') 400
+                    'liftIO' $ print $ 'BS.concat' packets1
+                    packets2 <- 'readData' ifHnd (return 'False') 200
+                    'liftIO' $ print $ 'BS.concat' packets1
     in runChunkedReaderT reader 'BS.empty'
 @
 
@@ -395,9 +395,9 @@ runChunkedReaderT = runStateT ∘ unCR
 
 {-| Reads data from the given FTDI interface by performing bulk reads.
 
-This function produces an action in the @ChunkedReaderT@ monad that
+This function produces an action in the 'ChunkedReaderT' monad that
 will read exactly the requested number of bytes unless it is
-explicitly asked to stop early. Executing the @readData@ action will
+explicitly asked to stop early. Executing the 'readData' action will
 block until either:
 
  * All data are read
@@ -409,16 +409,16 @@ The result value is a list of chunks, represented as
 
 Data are read in packets. The function may choose to request more than
 needed in order to get the highest possible bandwidth. The excess of
-bytes is kept as the state of the @ChunkedReaderT@ monad. A subsequent
-invocation of @readData@ will first return bytes from the stored state
+bytes is kept as the state of the 'ChunkedReaderT' monad. A subsequent
+invocation of 'readData' will first return bytes from the stored state
 before requesting more from the device itself. A consequence of this
 behaviour is that even when you request 100 bytes the function will
 actually request 512 bytes (depending on the packet size) and /block/
 until all 512 bytes are read! There is no workaround since requesting
 less bytes than the packet size is an error.
 
-USB timeouts will not interrupt @readData@. In case of a timeout
-@readData@ will simply resume reading data. A small USB timeout can
+USB timeouts will not interrupt 'readData'. In case of a timeout
+'readData' will simply resume reading data. A small USB timeout can
 degrade performance.
 
 The FTDI latency timer can cause poor performance. If the FTDI chip can't fill
@@ -438,7 +438,7 @@ Example:
 
 @
   -- Read 100 data bytes from ifHnd
-  (packets, rest) &#x2190; 'runChunkedReaderT' ('readData' ifHnd (return 'False') 100) 'BS.empty'
+  (packets, rest) <- 'runChunkedReaderT' ('readData' ifHnd (return 'False') 100) 'BS.empty'
 @
 
 -}
