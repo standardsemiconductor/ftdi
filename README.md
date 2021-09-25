@@ -17,7 +17,7 @@ $ cabal build
 $ cabal test
 ```
 
-## Examples
+## Sample Usage
 
 Find the first USB device matching the vendor ID and product ID:
 
@@ -26,7 +26,6 @@ import qualified System.USB as USB
 import qualified Data.Vector as V (toList)
 import Data.List (find)
 import System.FTDI
-import System.FTDI.MPSSE
 
 data Failure = FailureNotFound
              | FailureOther
@@ -80,6 +79,7 @@ withFTDI vendorId productId action = findFTDIDevice vendorId productId >>= \case
 ## References
 * [FTDI Website](https://ftdichip.com/)
 * [Application Note AN_108](https://www.ftdichip.com/Support/Documents/AppNotes/AN_108_Command_Processor_for_MPSSE_and_MCU_Host_Bus_Emulation_Modes.pdf): Command Processor for MPSSE and MCU Host Bus Emulation Modes
+* [USB in a NutShell](https://www.beyondlogic.org/usbnutshell/usb1.shtml): Making sense of the USB standard
 
 [hackage]:            <https://hackage.haskell.org/package/ftdi>
 [hackage-badge]:      <https://img.shields.io/hackage/v/ftdi.svg?color=success>
