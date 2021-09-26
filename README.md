@@ -30,11 +30,11 @@ import System.FTDI
 data Failure = FailureNotFound
              | FailureOther
 
-findFTDIDevice 
+findUSBDevice 
   :: USB.VendorId 
   -> USB.ProductId 
   -> IO (Either Failure (USB.Device, USB.Ctx))
-findFTDIDevice vendorId productId = do
+findUSBDevice vendorId productId = do
   ctx <- USB.newCtx
   devDescs <- getDeviceDescs ctx
   return $ case fst <$> find (match . snd) devDescs of
@@ -60,7 +60,7 @@ withFTDI
   -> USB.productId
   -> (InterfaceHandle -> IO (Either Failure a) 
   -> IO (Either Failure a)
-withFTDI vendorId productId action = findFTDIDevice vendorId productId >>= \case
+withFTDI vendorId productId action = findUSBDevice vendorId productId >>= \case
   Left failure -> return $ Left failure
   Right (usbDevice, ctx) -> do
     ftdiDevice <- fromUSBDevice usbDevice ChipType_2232H
