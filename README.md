@@ -52,7 +52,7 @@ getDeviceDescs ctx = do
   return $ zip devs deviceDescs
 ```
 
-Setup and control an FT2232 FTDI device on interface A:
+Setup an FT2232 FTDI device on interface A using MPSSE (Multi-Protocol Synchronous Serial Engine):
 
 ```haskell
 withFTDI 
