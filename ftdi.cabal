@@ -5,7 +5,7 @@ build-type:    Simple
 stability:     experimental
 author:        Roel van Dijk <vandijk.roel@gmail.com>, Ben Gamari <ben@smart-cactus.org>, David Cox <standardsemiconductor@gmail.com>
 maintainer:    David Cox <standardsemiconductor@gmail.com
-copyright:     (c) 2009, 2010 Roel van Dijk, (c) 2018 Ben Gamari, (c) 2021 David Cox
+copyright:     (c) 2009, 2010 Roel van Dijk, (c) 2018 Ben Gamari, (c) 2021-2022 David Cox
 license:       BSD3
 license-file:  LICENSE
 category:      System, Hardware
