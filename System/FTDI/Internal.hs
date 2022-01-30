@@ -6,6 +6,7 @@
            , NoImplicitPrelude
            , PatternGuards
            , ScopedTypeVariables
+           , StrictData
            , UnicodeSyntax
   #-}
 
