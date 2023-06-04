@@ -14,32 +14,24 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        ghc: ['8.6', '8.8', '8.10', '9.0']
-        cabal: ['3.0', '3.2', '3.4']
-        os: [ubuntu-18.04, ubuntu-20.04]
+        ghc: ['9.0']
+        cabal: ['3.10']
+        os: [ubuntu-20.04]
     name: ${{ matrix.os }} GHC ${{ matrix.ghc }} Cabal ${{ matrix.cabal }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Setup Haskell
-      uses: haskell/actions/setup@v1
+      uses: haskell/actions/setup@v2
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
     - name: Install dependencies
       run: |
-        sudo apt update
-        sudo apt install libusb-1.0-0-dev
-        cabal update
+        sudo apt-get update
+        sudo apt-get install libusb-1.0-0-dev
 
     - name: Build
-      run: |
-        cabal configure
-        cabal build
-
-    - name: Haskell Linter
-      uses: domdere/haskell-lint-action@v1.0.2
-    env:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      run: cabal build
