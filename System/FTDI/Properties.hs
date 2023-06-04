@@ -1,37 +1,27 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving
-           , StandaloneDeriving
-  #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE StandaloneDeriving         #-}
 
 module System.FTDI.Properties where
 
--- base
-import Control.Applicative   ( liftA2 )
-import Control.Arrow         ( first )
+import Control.Applicative
+import Control.Arrow
 import Data.Bits             ( (.&.) )
-import Data.Word             ( Word8 )
-
--- ftdi
+import Data.Word
+import Generic.Random        ( genericArbitrary, uniform )
 import System.FTDI           ( ModemStatus(..), ChipType(..)
                              , BaudRate(..), nearestBaudRate
                              )
 import System.FTDI.Internal  ( marshalModemStatus
                              , unmarshalModemStatus
                              )
-
--- QuickCheck
 import Test.QuickCheck       ( Arbitrary, arbitrary, shrink, choose
                              , frequency
                              )
-
--- random
 import System.Random         ( Random )
 
--- generic-random
-import Generic.Random        ( genericArbitrary, uniform )
-
--------------------------------------------------------------------------------
--- Properties
--------------------------------------------------------------------------------
+----------------
+-- Properties --
+----------------
 
 prop_marshalModemStatus :: ModemStatus -> Bool
 prop_marshalModemStatus =
