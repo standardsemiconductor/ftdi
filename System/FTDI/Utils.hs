@@ -1,57 +1,29 @@
-{-# LANGUAGE NoImplicitPrelude
-           , UnicodeSyntax
-  #-}
-
+-- | Utility functions
 module System.FTDI.Utils where
 
--------------------------------------------------------------------------------
--- Imports
--------------------------------------------------------------------------------
+import Data.Bits
 
--- base
-import Data.Bool                 ( Bool )
-import Data.Bits                 ( Bits, (.|.), (.&.), complement )
-import Data.Function             ( ($) )
-import Data.List                 ( foldr )
-import Data.Ord                  ( Ord, min, max )
-import Prelude                   ( Enum, Bounded, minBound, maxBound
-                                 , Num, (+), Integral
-                                 , fromEnum, fromIntegral
-                                 , divMod
-                                 )
+genFromEnum :: (Enum e, Num n) => e -> n
+genFromEnum = fromIntegral . fromEnum
 
--- base-unicode-symbols
-import Data.Bool.Unicode         ( (∧) )
-import Data.Eq.Unicode           ( (≢) )
-import Data.Ord.Unicode          ( (≤) )
-import Data.Function.Unicode     ( (∘) )
-
-
--------------------------------------------------------------------------------
--- Utility functions
--------------------------------------------------------------------------------
-
-genFromEnum ∷ (Enum e, Num n) ⇒ e → n
-genFromEnum = fromIntegral ∘ fromEnum
-
-orBits ∷ (Num α, Bits α) ⇒ [α] → α
+orBits :: (Num a, Bits a) => [a] -> a
 orBits = foldr (.|.) 0
 
-andBits ∷ (Num α, Bits α) ⇒ [α] → α
+andBits :: (Num a, Bits a) => [a] -> a
 andBits = foldr (.&.) $ complement 0
 
-clamp ∷ (Bounded α, Ord α) ⇒ α → α
-clamp = atLeast minBound ∘ atMost maxBound
+clamp :: (Bounded a, Ord a) => a -> a
+clamp = atLeast minBound . atMost maxBound
 
-atLeast ∷ Ord α ⇒ α → α → α
+atLeast :: Ord a => a -> a -> a
 atLeast = max
 
-atMost ∷ Ord α ⇒ α → α → α
+atMost :: Ord a => a -> a -> a
 atMost = min
 
-divRndUp ∷ Integral α ⇒ α → α → α
+divRndUp :: Integral a => a -> a -> a
 divRndUp x y = let (d, m) = x `divMod` y
-               in d + if m ≢ 0 then 1 else 0
+               in d + if m /= 0 then 1 else 0
 
-between ∷ Ord α ⇒ α → α → α → Bool
-between lo hi x = lo ≤ x ∧ x ≤ hi
+between :: Ord a => a -> a -> a -> Bool
+between lo hi x = (lo <= x) && (x <= hi)
