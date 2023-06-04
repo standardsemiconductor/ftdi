@@ -1,82 +1,32 @@
-{-# LANGUAGE CPP
-           , DeriveDataTypeable
-           , DeriveGeneric
-           , FlexibleContexts
-           , GeneralizedNewtypeDeriving
-           , NoImplicitPrelude
-           , PatternGuards
-           , ScopedTypeVariables
-           , UnicodeSyntax
-  #-}
+{-# LANGUAGE CPP                        #-}
+{-# LANGUAGE DeriveDataTypeable         #-}
+{-# LANGUAGE DeriveGeneric              #-}
+{-# LANGUAGE FlexibleContexts           #-}
+{-# LANGUAGE GeneralizedNewtypeDeriving #-}
+{-# LANGUAGE ImportQualifiedPost        #-}
+{-# LANGUAGE PatternGuards              #-}
+{-# LANGUAGE ScopedTypeVariables        #-}
 
 module System.FTDI.Internal where
 
--------------------------------------------------------------------------------
--- Imports
--------------------------------------------------------------------------------
-
--- from base:
-import Control.Applicative       ( Applicative, (<$>), Alternative )
-import Control.Exception         ( Exception, bracket, throwIO )
-import Control.Monad             ( Functor
-                                 , Monad, (>>=), (>>), (=<<), return
-                                 , MonadPlus
-                                 )
-import Control.Monad.Fix         ( MonadFix )
-import Data.Bool
-import Data.Bits                 ( (.|.)
-                                 , setBit, shiftL, shiftR, testBit
-                                 )
-import Data.Data                 ( Data )
-import Data.Eq                   ( Eq )
-import Data.Function             ( ($), on )
-import Data.Int                  ( Int )
-import Data.List                 ( foldr, minimumBy, zip )
-import Data.Maybe                ( Maybe(Just, Nothing), maybe )
-import Data.Ord                  ( Ord, (<), (>), compare )
-import Data.Tuple                ( fst, snd )
-import Data.Typeable             ( Typeable )
-import Data.Word                 ( Word8, Word16 )
-import GHC.Generics              ( Generic )
-import Prelude                   ( Enum, succ
-                                 , Bounded, minBound, maxBound
-                                 , Num, (+), (-), Integral, (^)
-                                 , Fractional, Real, RealFrac
-                                 , Double, Integer
-                                 , fromEnum, fromIntegral
-                                 , realToFrac, floor, ceiling
-                                 , div, error
-                                 , fmap, (.)
-                                 )
-import System.IO                 ( IO )
-import Text.Read                 ( Read )
-import Text.Show                 ( Show )
-
--- from base-unicode-symbols:
-import Data.Eq.Unicode           ( (≡) )
-import Data.Function.Unicode     ( (∘) )
-import Data.Monoid.Unicode       ( (⊕) )
-import Prelude.Unicode           ( (⋅), (÷) )
-
--- from bytestring:
-import qualified Data.ByteString as BS ( empty, drop, length
-                                       , null, splitAt, unpack
-                                       )
-import Data.ByteString           ( ByteString )
-
--- from ftdi:
-import System.FTDI.Utils         ( divRndUp, clamp, genFromEnum, orBits )
-
--- from vector:
-import qualified Data.Vector as V
-
--- from transformers:
-import Control.Monad.Trans.State ( StateT, get, put, runStateT )
-import Control.Monad.Trans.Class ( MonadTrans, lift )
+import Control.Applicative
+import Control.Exception hiding (handle)
+import Control.Monad
+import Control.Monad.Fix
 import Control.Monad.IO.Class    ( MonadIO, liftIO )
-
--- from usb:
-import qualified System.USB as USB
+import Control.Monad.Trans.Class ( MonadTrans, lift )
+import Control.Monad.Trans.State ( StateT, get, put, runStateT )
+import Data.Bits
+import Data.ByteString ( ByteString )
+import Data.ByteString qualified as BS
+import Data.Data
+import Data.Function
+import Data.List
+import Data.Vector qualified as V
+import Data.Word
+import GHC.Generics
+import System.FTDI.Utils
+import System.USB qualified as USB
 
 
 -------------------------------------------------------------------------------
@@ -95,21 +45,21 @@ instance Exception FTDIException
 type RequestCode  = Word8
 type RequestValue = Word16
 
-reqReset           ∷ RequestCode
-reqSetModemCtrl    ∷ RequestCode
-reqSetFlowCtrl     ∷ RequestCode
-reqSetBaudRate     ∷ RequestCode
-reqSetData         ∷ RequestCode
-reqPollModemStatus ∷ RequestCode
-reqSetEventChar    ∷ RequestCode
-reqSetErrorChar    ∷ RequestCode
-reqSetLatencyTimer ∷ RequestCode
-reqGetLatencyTimer ∷ RequestCode
-reqSetBitMode      ∷ RequestCode
-reqReadPins        ∷ RequestCode
-reqReadEEPROM      ∷ RequestCode
-reqWriteEEPROM     ∷ RequestCode
-reqEraseEEPROM     ∷ RequestCode
+reqReset           :: RequestCode
+reqSetModemCtrl    :: RequestCode
+reqSetFlowCtrl     :: RequestCode
+reqSetBaudRate     :: RequestCode
+reqSetData         :: RequestCode
+reqPollModemStatus :: RequestCode
+reqSetEventChar    :: RequestCode
+reqSetErrorChar    :: RequestCode
+reqSetLatencyTimer :: RequestCode
+reqGetLatencyTimer :: RequestCode
+reqSetBitMode      :: RequestCode
+reqReadPins        :: RequestCode
+reqReadEEPROM      :: RequestCode
+reqWriteEEPROM     :: RequestCode
+reqEraseEEPROM     :: RequestCode
 
 reqReset           = 0x00
 reqSetModemCtrl    = 0x01
@@ -127,18 +77,18 @@ reqReadEEPROM      = 0x90
 reqWriteEEPROM     = 0x91
 reqEraseEEPROM     = 0x92
 
-valResetSIO         ∷ RequestValue
-valPurgeReadBuffer  ∷ RequestValue
-valPurgeWriteBuffer ∷ RequestValue
+valResetSIO         :: RequestValue
+valPurgeReadBuffer  :: RequestValue
+valPurgeWriteBuffer :: RequestValue
 
 valResetSIO         = 0
 valPurgeReadBuffer  = 1
 valPurgeWriteBuffer = 2
 
-valSetDTRHigh ∷ RequestValue
-valSetDTRLow  ∷ RequestValue
-valSetRTSHigh ∷ RequestValue
-valSetRTSLow  ∷ RequestValue
+valSetDTRHigh :: RequestValue
+valSetDTRLow  :: RequestValue
+valSetRTSHigh :: RequestValue
+valSetRTSLow  :: RequestValue
 
 valSetDTRHigh = 0x0101
 valSetDTRLow  = 0x0100
@@ -152,7 +102,7 @@ valSetRTSLow  = 0x0200
 
 -- |Default USB timeout. The timeout can be set per device handle with
 -- the 'setTimeout' function.
-defaultTimeout ∷ Int
+defaultTimeout :: Int
 defaultTimeout = 5000
 
 
@@ -162,9 +112,9 @@ defaultTimeout = 5000
 
 -- |A representation of an FTDI device.
 data Device = Device
-    { devUSB      ∷ USB.Device
-    , devUSBConf  ∷ USB.ConfigDesc
-    , devChipType ∷ ChipType
+    { devUSB      :: USB.Device
+    , devUSBConf  :: USB.ConfigDesc
+    , devChipType :: ChipType
     }
 
 -- |The type of FTDI chip in a 'Device'. The capabilities of a device
@@ -177,19 +127,19 @@ data ChipType = ChipType_AM
               | ChipType_4232H
                 deriving (Enum, Eq, Ord, Show, Data, Typeable, Generic)
 
-getChipType ∷ Device → ChipType
+getChipType :: Device -> ChipType
 getChipType = devChipType
 
-setChipType ∷ Device → ChipType → Device
+setChipType :: Device -> ChipType -> Device
 setChipType dev ct = dev {devChipType = ct}
 
 -- |Promote a USB device to an FTDI device. You are responsible for
 -- supplying the correct USB device and specifying the correct chip
 -- type. There is no failsafe way to automatically determine whether a
 -- random USB device is an actual FTDI device.
-fromUSBDevice ∷ USB.Device -- ^ USB device
-              → ChipType
-              → IO Device     -- ^ FTDI device
+fromUSBDevice :: USB.Device -- ^ USB device
+              -> ChipType
+              -> IO Device     -- ^ FTDI device
 fromUSBDevice dev chip = do
   config <- USB.getConfigDesc dev 0
   return Device { devUSB      = dev
@@ -200,18 +150,18 @@ fromUSBDevice dev chip = do
 -- |Tries to guess the type of the FTDI chip by looking at the USB
 -- device release number of a device's descriptor. Each FTDI chip uses
 -- a specific release number to indicate its type.
-guessChipType ∷ USB.DeviceDesc → Maybe ChipType
+guessChipType :: USB.DeviceDesc -> Maybe ChipType
 guessChipType desc = case USB.deviceReleaseNumber desc of
                        -- Workaround for bug in BM type chips
-                       (0,2,0,0) | USB.deviceSerialNumberStrIx desc ≡ Just 0
-                                             → Just ChipType_BM
-                                 | otherwise → Just ChipType_AM
-                       (0,4,0,0) → Just ChipType_BM
-                       (0,5,0,0) → Just ChipType_2232C
-                       (0,6,0,0) → Just ChipType_R
-                       (0,7,0,0) → Just ChipType_2232H
-                       (0,8,0,0) → Just ChipType_4232H
-                       _         → Nothing
+                       (0,2,0,0) | USB.deviceSerialNumberStrIx desc == Just 0
+                                             -> Just ChipType_BM
+                                 | otherwise -> Just ChipType_AM
+                       (0,4,0,0) -> Just ChipType_BM
+                       (0,5,0,0) -> Just ChipType_2232C
+                       (0,6,0,0) -> Just ChipType_R
+                       (0,7,0,0) -> Just ChipType_2232H
+                       (0,8,0,0) -> Just ChipType_4232H
+                       _         -> Nothing
 
 -------------------------------------------------------------------------------
 -- Interfaces
@@ -226,21 +176,21 @@ data Interface = Interface_A
                | Interface_D
                  deriving (Enum, Eq, Ord, Show, Data, Typeable)
 
-interfaceIndex ∷ Interface → Word16
-interfaceIndex = succ ∘ genFromEnum
+interfaceIndex :: Interface -> Word16
+interfaceIndex = succ . genFromEnum
 
-interfaceToUSB ∷ Interface → USB.InterfaceNumber
+interfaceToUSB :: Interface -> USB.InterfaceNumber
 interfaceToUSB = genFromEnum
 
-interfaceEndPointIn ∷ Interface → USB.EndpointAddress
+interfaceEndPointIn :: Interface -> USB.EndpointAddress
 interfaceEndPointIn i =
-    USB.EndpointAddress { USB.endpointNumber    = 1 + 2 ⋅ genFromEnum i
+    USB.EndpointAddress { USB.endpointNumber    = 1 + 2 * genFromEnum i
                         , USB.transferDirection = USB.In
                         }
 
-interfaceEndPointOut ∷ Interface → USB.EndpointAddress
+interfaceEndPointOut :: Interface -> USB.EndpointAddress
 interfaceEndPointOut i =
-    USB.EndpointAddress { USB.endpointNumber    = 2 + 2 ⋅ genFromEnum i
+    USB.EndpointAddress { USB.endpointNumber    = 2 + 2 * genFromEnum i
                         , USB.transferDirection = USB.Out
                         }
 
@@ -250,28 +200,28 @@ interfaceEndPointOut i =
 
 -- |You need a handle in order to communicate with a 'Device'.
 data DeviceHandle = DeviceHandle
-    { devHndUSB     ∷ USB.DeviceHandle
-    , devHndDev     ∷ Device
-    , devHndTimeout ∷ Int
+    { devHndUSB     :: USB.DeviceHandle
+    , devHndDev     :: Device
+    , devHndTimeout :: Int
     }
 
 -- |Perform a USB device reset.
-resetUSB ∷ DeviceHandle → IO ()
-resetUSB = USB.resetDevice ∘ devHndUSB
+resetUSB :: DeviceHandle -> IO ()
+resetUSB = USB.resetDevice . devHndUSB
 
 -- |Returns the USB timeout associated with a handle.
-getTimeout ∷ DeviceHandle → Int
+getTimeout :: DeviceHandle -> Int
 getTimeout = devHndTimeout
 
 -- |Modifies the USB timeout associated with a handle.
-setTimeout ∷ DeviceHandle → Int → DeviceHandle
+setTimeout :: DeviceHandle -> Int -> DeviceHandle
 setTimeout devHnd timeout = devHnd {devHndTimeout = timeout}
 
 -- |Open a device handle to enable communication. Only use this if you
 -- can't use 'withDeviceHandle' for some reason.
-openDevice ∷ Device → IO DeviceHandle
+openDevice :: Device -> IO DeviceHandle
 openDevice dev = do
-  handle ← USB.openDevice $ devUSB dev
+  handle <- USB.openDevice $ devUSB dev
 --  USB.setConfig handle $ Just $ USB.configValue $ devUSBConf dev
   return DeviceHandle { devHndUSB     = handle
                       , devHndDev     = dev
@@ -279,13 +229,13 @@ openDevice dev = do
                       }
 
 -- |Release a device handle.
-closeDevice ∷ DeviceHandle → IO ()
+closeDevice :: DeviceHandle -> IO ()
 closeDevice = USB.closeDevice . devHndUSB
 
 -- |The recommended way to acquire a handle. Ensures that the handle
 -- is released when the monadic computation is completed. Even, or
 -- especially, when an exception is thrown.
-withDeviceHandle ∷ Device → (DeviceHandle → IO α) → IO α
+withDeviceHandle :: Device -> (DeviceHandle -> IO a) -> IO a
 withDeviceHandle dev = bracket (openDevice dev) closeDevice
 
 -------------------------------------------------------------------------------
@@ -293,35 +243,35 @@ withDeviceHandle dev = bracket (openDevice dev) closeDevice
 -------------------------------------------------------------------------------
 
 data InterfaceHandle = InterfaceHandle
-    { ifHndDevHnd    ∷ DeviceHandle
-    , ifHndInterface ∷ Interface
-    , ifHndInEPDesc  ∷ USB.EndpointDesc
-    , ifHndOutEPDesc ∷ USB.EndpointDesc
+    { ifHndDevHnd    :: DeviceHandle
+    , ifHndInterface :: Interface
+    , ifHndInEPDesc  :: USB.EndpointDesc
+    , ifHndOutEPDesc :: USB.EndpointDesc
     }
 
-getDeviceHandle ∷ InterfaceHandle → DeviceHandle
+getDeviceHandle :: InterfaceHandle -> DeviceHandle
 getDeviceHandle = ifHndDevHnd
 
-getInterface ∷ InterfaceHandle → Interface
+getInterface :: InterfaceHandle -> Interface
 getInterface = ifHndInterface
 
-openInterface ∷ DeviceHandle → Interface → IO InterfaceHandle
+openInterface :: DeviceHandle -> Interface -> IO InterfaceHandle
 openInterface devHnd i =
     let conf    = devUSBConf $ devHndDev devHnd
         ifIx    = fromEnum i
         mIfDesc = (USB.configInterfaces conf V.!? ifIx) >>= headMay
-        mInOutEps = V.partition ((USB.In ≡) ∘ USB.transferDirection ∘ USB.endpointAddress)
-                    ∘ USB.interfaceEndpoints
+        mInOutEps = V.partition ((USB.In ==) . USB.transferDirection . USB.endpointAddress)
+                    . USB.interfaceEndpoints
                     <$> mIfDesc
-        mInEp   = headMay ∘ fst =<< mInOutEps
-        mOutEp  = headMay ∘ snd =<< mInOutEps
+        mInEp   = headMay . fst =<< mInOutEps
+        mOutEp  = headMay . snd =<< mInOutEps
         headMay = (V.!? 0)
     in maybe (throwIO InterfaceNotFound)
-             ( \ifHnd → do USB.claimInterface (devHndUSB devHnd) (interfaceToUSB i)
-                           return ifHnd
+             ( \ifHnd -> do USB.claimInterface (devHndUSB devHnd) (interfaceToUSB i)
+                            return ifHnd
              )
-             $ do inEp  ← mInEp
-                  outEp ← mOutEp
+             $ do inEp  <- mInEp
+                  outEp <- mOutEp
                   return InterfaceHandle
                      { ifHndDevHnd    = devHnd
                      , ifHndInterface = i
@@ -329,11 +279,11 @@ openInterface devHnd i =
                      , ifHndOutEPDesc = outEp
                      }
 
-closeInterface ∷ InterfaceHandle → IO ()
+closeInterface :: InterfaceHandle -> IO ()
 closeInterface ifHnd = USB.releaseInterface (devHndUSB $ ifHndDevHnd ifHnd)
                                             (interfaceToUSB $ ifHndInterface ifHnd)
 
-withInterfaceHandle ∷ DeviceHandle → Interface → (InterfaceHandle → IO α) → IO α
+withInterfaceHandle :: DeviceHandle -> Interface -> (InterfaceHandle -> IO a) -> IO a
 withInterfaceHandle h i = bracket (openInterface h i) closeInterface
 
 -------------------------------------------------------------------------------
@@ -347,7 +297,7 @@ withDetachedKernelDriver devHndl i =
 -- Data transfer
 -------------------------------------------------------------------------------
 
-newtype ChunkedReaderT m α = ChunkedReaderT {unCR ∷ StateT ByteString m α}
+newtype ChunkedReaderT m a = ChunkedReaderT {unCR :: StateT ByteString m a}
     deriving ( Functor
              , Applicative
              , Alternative
@@ -390,8 +340,8 @@ plumbing:
 @
 
 -}
-runChunkedReaderT ∷ ChunkedReaderT m α → ByteString → m (α, ByteString)
-runChunkedReaderT = runStateT ∘ unCR
+runChunkedReaderT :: ChunkedReaderT m a -> ByteString -> m (a, ByteString)
+runChunkedReaderT = runStateT . unCR
 
 {-| Reads data from the given FTDI interface by performing bulk reads.
 
@@ -442,51 +392,51 @@ Example:
 @
 
 -}
-readData ∷ ∀ m. MonadIO m
-         ⇒ InterfaceHandle
-         → m Bool -- ^ Check stop action
-         → Int -- ^ Number of bytes to read
-         → ChunkedReaderT m [ByteString]
+readData :: forall m. MonadIO m
+         => InterfaceHandle
+         -> m Bool -- ^ Check stop action
+         -> Int    -- ^ Number of bytes to read
+         -> ChunkedReaderT m [ByteString]
 readData ifHnd checkStop numBytes = ChunkedReaderT $
-    do prevRest ← get
+    do prevRest <- get
        let readNumBytes = numBytes - BS.length prevRest
        if readNumBytes > 0
-         then do chunks ← readLoop readNumBytes
+         then do chunks <- readLoop readNumBytes
                  return $ if BS.null prevRest
                           then chunks
                           else prevRest : chunks
          else let (bs, newRest) = BS.splitAt numBytes prevRest
               in put newRest >> return [bs]
     where
-      readLoop ∷ Int → StateT ByteString m [ByteString]
+      readLoop :: Int -> StateT ByteString m [ByteString]
       readLoop readNumBytes = do
         -- Amount of bytes we need to request in order to get atleast
         -- 'readNumBytes' bytes of data.
-        let reqSize    = packetSize ⋅ reqPackets
+        let reqSize    = packetSize * reqPackets
             reqPackets = readNumBytes `divRndUp` packetDataSize
         -- Timeout is ignored; the number of bytes that was read contains
         -- enough information.
-        (bytes, _) ← liftIO $ readBulk ifHnd reqSize
+        (bytes, _) <- liftIO $ readBulk ifHnd reqSize
 
         let receivedDataBytes   = receivedBytes - receivedHeaderBytes
             receivedBytes       = BS.length bytes
-            receivedHeaderBytes = packetHeaderSize ⋅ receivedPackets
+            receivedHeaderBytes = packetHeaderSize * receivedPackets
             receivedPackets     = receivedBytes `divRndUp` packetSize
 
         -- The reason for not actually getting the requested amount of bytes
         -- could be either a USB timeout or the FTDI latency timer firing.
         --
         -- In case of a USB timeout:
-        --   ∃ (n : Nat). receivedBytes ≡ n ⋅ packetSize
+        --   ∃ (n : Nat). receivedBytes ≡ n * packetSize
         --
         -- In case of FTDI latency timer:
         --   receivedBytes < packetSize
         if receivedDataBytes < readNumBytes
           then let xs = splitPackets bytes
-               in lift checkStop >>= \stop →
+               in lift checkStop >>= \stop ->
                   if stop
                   then put BS.empty >> return xs
-                  else fmap (xs ⊕)
+                  else fmap (xs <>)
                             (readLoop $ readNumBytes - receivedDataBytes)
           else -- We might have received too much data, since we can only
                -- request multiples of 'packetSize' bytes. Split the byte
@@ -495,29 +445,29 @@ readData ifHnd checkStop numBytes = ChunkedReaderT $
                let (bs, newRest) = BS.splitAt (splitIndex readNumBytes) bytes
                in put newRest >> return (splitPackets bs)
 
-      splitIndex n = p ⋅ packetSize + packetHeaderSize
-                     + (n - p ⋅ packetDataSize)
+      splitIndex n = p * packetSize + packetHeaderSize
+                     + (n - p * packetDataSize)
           where p = n `div` packetDataSize
 
       packetDataSize   = packetSize - packetHeaderSize
       packetHeaderSize = 2
       packetSize       = USB.maxPacketSize
-                         ∘ USB.endpointMaxPacketSize
+                         . USB.endpointMaxPacketSize
                          $ ifHndInEPDesc ifHnd
 
       -- |Split a stream of bytes into packets. The first 2 bytes of each
       -- packet are the modem status bytes and are dropped.
       splitPackets xs | BS.null xs = []
                       | otherwise  = case BS.splitAt packetSize xs of
-                                       (a, b) → BS.drop 2 a : splitPackets b
+                                       (a, b) -> BS.drop 2 a : splitPackets b
 
 -- |Perform a bulk read.
 --
 -- Returns the bytes that where read (in the form of a 'ByteString') and a flag
 -- which indicates whether a timeout occured during the request.
-readBulk ∷ InterfaceHandle
-         → Int -- ^Number of bytes to read
-         → IO (ByteString, USB.Status)
+readBulk :: InterfaceHandle
+         -> Int -- ^Number of bytes to read
+         -> IO (ByteString, USB.Status)
 readBulk ifHnd =
     USB.readBulk (devHndUSB $ ifHndDevHnd ifHnd)
                  (interfaceEndPointIn $ ifHndInterface ifHnd)
@@ -527,9 +477,9 @@ readBulk ifHnd =
 --
 -- Returns the number of bytes that where written and a flag which indicates
 -- whether a timeout occured during the request.
-writeBulk ∷ InterfaceHandle
-          → ByteString -- ^Data to be written
-          → IO (Int, USB.Status)
+writeBulk :: InterfaceHandle
+          -> ByteString -- ^Data to be written
+          -> IO (Int, USB.Status)
 writeBulk ifHnd bs =
     USB.writeBulk (devHndUSB $ ifHndDevHnd ifHnd)
                   (interfaceEndPointOut $ ifHndInterface ifHnd)
@@ -541,18 +491,18 @@ writeBulk ifHnd bs =
 -------------------------------------------------------------------------------
 
 -- |The type of a USB control request.
-type USBControl α = USB.DeviceHandle
-                  → USB.ControlSetup
-                  → USB.Timeout
-                  → α
+type USBControl a = USB.DeviceHandle
+                  -> USB.ControlSetup
+                  -> USB.Timeout
+                  -> a
 
 -- |Generic FTDI control request with explicit index
-genControl ∷ USBControl α
-           → USB.Index -- ^Index
-           → InterfaceHandle
-           → RequestCode
-           → RequestValue
-           → α
+genControl :: USBControl a
+           -> USB.Index -- ^Index
+           -> InterfaceHandle
+           -> RequestCode
+           -> RequestValue
+           -> a
 genControl usbCtrl index ifHnd request value =
     usbCtrl usbHnd setup (devHndTimeout devHnd)
     where devHnd = ifHndDevHnd ifHnd
@@ -565,43 +515,43 @@ genControl usbCtrl index ifHnd request value =
                                     , USB.controlSetupIndex       = index'
                                     }
 
-control ∷ InterfaceHandle → RequestCode → USB.Value → IO ()
+control :: InterfaceHandle -> RequestCode -> USB.Value -> IO ()
 control = genControl USB.control 0
 
-readControl ∷ InterfaceHandle → RequestCode → USB.Value → USB.Size → IO (ByteString, USB.Status)
+readControl :: InterfaceHandle -> RequestCode -> USB.Value -> USB.Size -> IO (ByteString, USB.Status)
 readControl = genControl USB.readControl 0
 
-writeControl ∷ InterfaceHandle → RequestCode → USB.Value → ByteString → IO (USB.Size, USB.Status)
+writeControl :: InterfaceHandle -> RequestCode -> USB.Value -> ByteString -> IO (USB.Size, USB.Status)
 writeControl = genControl (\hdl setup timeout bs -> USB.writeControl hdl setup bs timeout) 0
 
 -------------------------------------------------------------------------------
 
 -- |Reset the FTDI device.
-reset ∷ InterfaceHandle → IO ()
+reset :: InterfaceHandle -> IO ()
 reset ifHnd = control ifHnd reqReset valResetSIO
 
 -- |Clear the on-chip read buffer.
-purgeReadBuffer ∷ InterfaceHandle → IO ()
+purgeReadBuffer :: InterfaceHandle -> IO ()
 purgeReadBuffer ifHnd = control ifHnd reqReset valPurgeReadBuffer
 
 -- |Clear the on-chip write buffer.
-purgeWriteBuffer ∷ InterfaceHandle → IO ()
+purgeWriteBuffer :: InterfaceHandle -> IO ()
 purgeWriteBuffer ifHnd = control ifHnd reqReset valPurgeWriteBuffer
 
 -------------------------------------------------------------------------------
 
 -- |Returns the current value of the FTDI latency timer.
-getLatencyTimer ∷ InterfaceHandle → IO Word8
+getLatencyTimer :: InterfaceHandle -> IO Word8
 getLatencyTimer ifHnd = do
-    (bs, _) ← readControl ifHnd reqGetLatencyTimer 0 1
+    (bs, _) <- readControl ifHnd reqGetLatencyTimer 0 1
     case BS.unpack bs of
-      [b] → return b
-      _   → error "System.FTDI.getLatencyTimer: failed"
+      [b] -> return b
+      _   -> error "System.FTDI.getLatencyTimer: failed"
 
 -- |Set the FTDI latency timer. The latency is the amount of
 -- milliseconds after which the FTDI chip will send a packet
 -- regardless of the number of bytes in the packet.
-setLatencyTimer ∷ InterfaceHandle → Word8 → IO ()
+setLatencyTimer :: InterfaceHandle -> Word8 -> IO ()
 setLatencyTimer ifHnd latency = control ifHnd reqSetLatencyTimer
                                         $ fromIntegral latency
 
@@ -631,19 +581,19 @@ data BitMode = -- |Switch off bitbang mode, back to regular serial/FIFO.
              | BitMode_SyncFIFO
               deriving (Eq, Ord, Show, Data, Typeable)
 
-marshalBitMode ∷ BitMode → Word8
+marshalBitMode :: BitMode -> Word8
 marshalBitMode bm = case bm of
-                      BitMode_Reset       → 0x00
-                      BitMode_BitBang     → 0x01
-                      BitMode_MPSSE       → 0x02
-                      BitMode_SyncBitBang → 0x04
-                      BitMode_MCU         → 0x08
-                      BitMode_Opto        → 0x10
-                      BitMode_CBus        → 0x20
-                      BitMode_SyncFIFO    → 0x40
+                      BitMode_Reset       -> 0x00
+                      BitMode_BitBang     -> 0x01
+                      BitMode_MPSSE       -> 0x02
+                      BitMode_SyncBitBang -> 0x04
+                      BitMode_MCU         -> 0x08
+                      BitMode_Opto        -> 0x10
+                      BitMode_CBus        -> 0x20
+                      BitMode_SyncFIFO    -> 0x40
 
 -- |The bitmode controls the method of communication.
-setBitMode ∷ InterfaceHandle → Word8 → BitMode → IO ()
+setBitMode :: InterfaceHandle -> Word8 -> BitMode -> IO ()
 setBitMode ifHnd bitMask bitMode = control ifHnd reqSetBitMode value
     where bitMask' = fromIntegral bitMask
           bitMode' = fromIntegral $ marshalBitMode bitMode
@@ -660,7 +610,7 @@ setBitMode ifHnd bitMask bitMode = control ifHnd reqSetBitMode value
 -- documentation the maximum allowed error is 3%. The nearest
 -- representable baud rate can be calculated with the
 -- 'nearestBaudRate' function.
-setBaudRate ∷ RealFrac α ⇒ InterfaceHandle → BaudRate α → IO (BaudRate α)
+setBaudRate :: RealFrac a => InterfaceHandle -> BaudRate a -> IO (BaudRate a)
 setBaudRate ifHnd baudRate =
   do genControl USB.control ix ifHnd reqSetBaudRate val
      return b
@@ -691,19 +641,19 @@ data StopBits = StopBit_1
                 deriving (Enum)
 
 -- |Set RS232 line characteristics
-setLineProperty ∷ InterfaceHandle
-                → BitDataFormat -- ^Number of bits
-                → StopBits      -- ^Number of stop bits
-                → Maybe Parity  -- ^Optional parity mode
-                → Bool          -- ^Break
-                → IO ()
+setLineProperty :: InterfaceHandle
+                -> BitDataFormat -- ^Number of bits
+                -> StopBits      -- ^Number of stop bits
+                -> Maybe Parity  -- ^Optional parity mode
+                -> Bool          -- ^Break
+                -> IO ()
 setLineProperty ifHnd bitDataFormat stopBits parity break' =
     control ifHnd
             reqSetData
             $ orBits [ case bitDataFormat of
-                         Bits_7 → 7
-                         Bits_8 → 8
-                     , maybe 0 (\p → (1 + genFromEnum p) `shiftL` 8) parity
+                         Bits_7 -> 7
+                         Bits_8 -> 8
+                     , maybe 0 (\p -> (1 + genFromEnum p) `shiftL` 8) parity
                      , genFromEnum stopBits `shiftL` 11
                      , genFromEnum break'   `shiftL` 14
                      ]
@@ -720,32 +670,32 @@ setLineProperty ifHnd bitDataFormat stopBits parity break' =
 -- 'pollModemStatus' function.
 data ModemStatus = ModemStatus
     { -- |Clear to send (CTS)
-      msClearToSend ∷ Bool
+      msClearToSend :: Bool
       -- |Data set ready (DTS)
-    , msDataSetReady ∷ Bool
+    , msDataSetReady :: Bool
       -- |Ring indicator (RI)
-    , msRingIndicator ∷ Bool
+    , msRingIndicator :: Bool
       -- |Receive line signal detect (RLSD)
-    , msReceiveLineSignalDetect ∷ Bool
+    , msReceiveLineSignalDetect :: Bool
       -- | Data ready (DR)
-    , msDataReady ∷ Bool
+    , msDataReady :: Bool
       -- |Overrun error (OE)
-    , msOverrunError ∷ Bool
+    , msOverrunError :: Bool
       -- |Parity error (PE)
-    , msParityError ∷ Bool
+    , msParityError :: Bool
       -- |Framing error (FE)
-    , msFramingError ∷ Bool
+    , msFramingError :: Bool
       -- |Break interrupt (BI)
-    , msBreakInterrupt ∷ Bool
+    , msBreakInterrupt :: Bool
       -- |Transmitter holding register (THRE)
-    , msTransmitterHoldingRegister ∷ Bool
+    , msTransmitterHoldingRegister :: Bool
       -- |Transmitter empty (TEMT)
-    , msTransmitterEmpty ∷ Bool
+    , msTransmitterEmpty :: Bool
       -- |Error in RCVR FIFO
-    , msErrorInReceiverFIFO ∷ Bool
+    , msErrorInReceiverFIFO :: Bool
     } deriving (Eq, Ord, Show, Data, Typeable, Generic)
 
-marshalModemStatus ∷ ModemStatus → (Word8, Word8)
+marshalModemStatus :: ModemStatus -> (Word8, Word8)
 marshalModemStatus ms = (a, b)
     where
       a = mkByte $ zip [4..]
@@ -765,10 +715,10 @@ marshalModemStatus ms = (a, b)
                        , msErrorInReceiverFIFO
                        ]
 
-      mkByte ∷ [(Int, ModemStatus → Bool)] → Word8
-      mkByte = foldr (\(n, f) x → if f ms then setBit x n else x) 0
+      mkByte :: [(Int, ModemStatus -> Bool)] -> Word8
+      mkByte = foldr (\(n, f) x -> if f ms then setBit x n else x) 0
 
-unmarshalModemStatus ∷ Word8 → Word8 → ModemStatus
+unmarshalModemStatus :: Word8 -> Word8 -> ModemStatus
 unmarshalModemStatus a b =
     ModemStatus { msClearToSend                = testBit a 4
                 , msDataSetReady               = testBit a 5
@@ -785,12 +735,12 @@ unmarshalModemStatus a b =
                 }
 
 -- |Manually request the modem status.
-pollModemStatus ∷ InterfaceHandle → IO ModemStatus
+pollModemStatus :: InterfaceHandle -> IO ModemStatus
 pollModemStatus ifHnd = do
-    (bs, _) ← readControl ifHnd reqPollModemStatus 0 2
+    (bs, _) <- readControl ifHnd reqPollModemStatus 0 2
     case BS.unpack bs of
-      [x,y] → return $ unmarshalModemStatus x y
-      _     → error "System.FTDI.pollModemStatus: failed"
+      [x,y] -> return $ unmarshalModemStatus x y
+      _     -> error "System.FTDI.pollModemStatus: failed"
 
 
 -------------------------------------------------------------------------------
@@ -801,15 +751,15 @@ data FlowCtrl = RTS_CTS -- ^Request-To-Send \/ Clear-To-Send
               | DTR_DSR -- ^Data-Terminal-Ready \/ Data-Set-Ready
               | XOnXOff -- ^Transmitter on \/ Transmitter off
 
-marshalFlowControl ∷ FlowCtrl → Word16
+marshalFlowControl :: FlowCtrl -> Word16
 marshalFlowControl f = case f of
-                         RTS_CTS → 0x0100
-                         DTR_DSR → 0x0200
-                         XOnXOff → 0x0400
+                         RTS_CTS -> 0x0100
+                         DTR_DSR -> 0x0200
+                         XOnXOff -> 0x0400
 
 -- |Set the flow control for the FTDI chip. Use 'Nothing' to disable flow
 -- control.
-setFlowControl ∷ InterfaceHandle → Maybe FlowCtrl → IO ()
+setFlowControl :: InterfaceHandle -> Maybe FlowCtrl -> IO ()
 setFlowControl ifHnd mFC = genControl USB.control
                                       (maybe 0 marshalFlowControl mFC)
                                       ifHnd
@@ -817,26 +767,26 @@ setFlowControl ifHnd mFC = genControl USB.control
                                       0
 
 -- |Set DTR line.
-setDTR ∷ InterfaceHandle → Bool → IO ()
+setDTR :: InterfaceHandle -> Bool -> IO ()
 setDTR ifHnd b = control ifHnd reqSetModemCtrl
                $ if b then valSetDTRHigh else valSetDTRLow
 
 -- |Set RTS line.
-setRTS ∷ InterfaceHandle → Bool → IO ()
+setRTS :: InterfaceHandle -> Bool -> IO ()
 setRTS ifHnd b = control ifHnd reqSetModemCtrl
                $ if b then valSetRTSHigh else valSetRTSLow
 
-genSetCharacter ∷ RequestCode → InterfaceHandle → Maybe Word8 → IO ()
+genSetCharacter :: RequestCode -> InterfaceHandle -> Maybe Word8 -> IO ()
 genSetCharacter req ifHnd mEC =
-    control ifHnd req $ maybe 0 (\c → setBit (fromIntegral c) 8) mEC
+    control ifHnd req $ maybe 0 (\c -> setBit (fromIntegral c) 8) mEC
 
 -- |Set the special event character. Use 'Nothing' to disable the event
 -- character.
-setEventCharacter ∷ InterfaceHandle → Maybe Word8 → IO ()
+setEventCharacter :: InterfaceHandle -> Maybe Word8 -> IO ()
 setEventCharacter = genSetCharacter reqSetEventChar
 
 -- |Set the error character.  Use 'Nothing' to disable the error character.
-setErrorCharacter ∷ InterfaceHandle → Maybe Word8 → IO ()
+setErrorCharacter :: InterfaceHandle -> Maybe Word8 -> IO ()
 setErrorCharacter = genSetCharacter reqSetErrorChar
 
 
@@ -844,96 +794,96 @@ setErrorCharacter = genSetCharacter reqSetErrorChar
 -- Baud rate
 -------------------------------------------------------------------------------
 
-newtype BRDiv α = BRDiv {unBRDiv ∷ α}
+newtype BRDiv a = BRDiv {unBRDiv :: a}
     deriving ( Eq, Ord, Show, Read, Enum, Num, Integral
              , Real, Fractional, RealFrac
              )
 
-instance Num α ⇒ Bounded (BRDiv α) where
+instance Num a => Bounded (BRDiv a) where
     minBound = 0
-    maxBound = 2 ^ (14 ∷ Int) - 1
+    maxBound = 2 ^ (14 :: Int) - 1
 
-newtype BRSubDiv α = BRSubDiv {unBRSubDiv ∷ α}
+newtype BRSubDiv a = BRSubDiv {unBRSubDiv :: a}
     deriving ( Eq, Ord, Show, Read, Enum, Num, Integral
              , Real, Fractional, RealFrac
              )
 
-instance Num α ⇒ Bounded (BRSubDiv α) where
+instance Num a => Bounded (BRSubDiv a) where
     minBound = 0
     maxBound = 7
 
 -- |Representation of a baud rate. The most interesting part is the
 -- instance for 'Bounded'.
-newtype BaudRate α = BaudRate {unBaudRate ∷ α}
+newtype BaudRate a = BaudRate {unBaudRate :: a}
     deriving ( Eq, Ord, Show, Read, Enum, Num, Integral
              , Real, Fractional, RealFrac
              )
 
-instance Num α ⇒ Bounded (BaudRate α) where
+instance Num a => Bounded (BaudRate a) where
     -- Minimum baud rate is the maximum baudrate divided by the
     -- largest possible divider.
     minBound = fromIntegral
-               $ (ceiling ∷ BaudRate Double → BaudRate Integer)
+               $ (ceiling :: BaudRate Double -> BaudRate Integer)
                $ calcBaudRate maxBound maxBound
 
     maxBound = BaudRate 3000000
 
 -- http://www.ftdichip.com/Documents/AppNotes/AN232B-05_BaudRates.pdf
-encodeBaudRateDivisors ∷ ChipType → BRDiv Int → BRSubDiv Int → (Word16, Word16)
+encodeBaudRateDivisors :: ChipType -> BRDiv Int -> BRSubDiv Int -> (Word16, Word16)
 encodeBaudRateDivisors chip d s = (v, i)
   where
     v = fromIntegral d .|. shiftL s' 14
-    i | ChipType_2232C ← chip = shiftL (shiftR s' 2) 8
+    i | ChipType_2232C <- chip = shiftL (shiftR s' 2) 8
       | otherwise = shiftR s' 2
-    s' = fromIntegral $ encodeSubDiv s ∷ Word16
+    s' = fromIntegral $ encodeSubDiv s :: Word16
 
-    encodeSubDiv ∷ BRSubDiv Int → Int
+    encodeSubDiv :: BRSubDiv Int -> Int
     encodeSubDiv n =
         case n of
-          0 → 0 -- 000 ==> 0/8 = 0
-          4 → 1 -- 001 ==> 4/8 = 0.5
-          2 → 2 -- 010 ==> 2/8 = 0.25
-          1 → 3 -- 011 ==> 1/8 = 0.125
-          3 → 4 -- 100 ==> 3/8 = 0.375
-          5 → 5 -- 101 ==> 5/8 = 0.625
-          6 → 6 -- 110 ==> 6/8 = 0.75
-          7 → 7 -- 111 ==> 7/8 = 0.875
-          _ → error "Illegal subdivisor"
+          0 -> 0 -- 000 ==> 0/8 = 0
+          4 -> 1 -- 001 ==> 4/8 = 0.5
+          2 -> 2 -- 010 ==> 2/8 = 0.25
+          1 -> 3 -- 011 ==> 1/8 = 0.125
+          3 -> 4 -- 100 ==> 3/8 = 0.375
+          5 -> 5 -- 101 ==> 5/8 = 0.625
+          6 -> 6 -- 110 ==> 6/8 = 0.75
+          7 -> 7 -- 111 ==> 7/8 = 0.875
+          _ -> error "Illegal subdivisor"
 
 -- |Calculates the nearest representable baud rate.
-nearestBaudRate ∷ RealFrac α ⇒ ChipType → BaudRate α → BaudRate α
+nearestBaudRate :: RealFrac a => ChipType -> BaudRate a -> BaudRate a
 nearestBaudRate chip baudRate = b
   where (_, _, b) = calcBaudRateDivisors chip baudRate
 
 
 -- |Finds the divisors that most closely represent the requested baud rate.
-calcBaudRateDivisors ∷ ∀ α. RealFrac α
-                     ⇒ ChipType
-                     → BaudRate α
-                     → (BRDiv Int, BRSubDiv Int, BaudRate α)
+calcBaudRateDivisors :: forall a. RealFrac a
+                     => ChipType
+                     -> BaudRate a
+                     -> (BRDiv Int, BRSubDiv Int, BaudRate a)
 calcBaudRateDivisors _    3000000  = (0, 0, 0)
 calcBaudRateDivisors _    2000000  = (1, 0, 0)
 calcBaudRateDivisors chip baudRate =
-    minimumBy (compare `on` (\(_,_,x) → x))
+    minimumBy (compare `on` (\(_,_,x) -> x))
               [ (d, s, b')
-              | s ← chipSubDivisors chip
-              , let s' = fromIntegral s ÷ 8
+              | s <- chipSubDivisors chip
+              , let s' = fromIntegral s / 8
                     d  = divisor baudRate s'
                     -- Baud rate calculated from found divisors.
                     b' = calcBaudRate d s'
               ]
     where
       -- |Calculates the divisor from a baud rate and a subdivisor.
-      divisor ∷ Integral β ⇒ BaudRate α → BRSubDiv α → BRDiv β
-      divisor br s = clamp $ floor $ (maxBound - br ⋅ s') ÷ br
+      divisor :: Integral b => BaudRate a -> BRSubDiv a -> BRDiv b
+      divisor br s = clamp $ floor $ (maxBound - br * s') / br
           where s' = BaudRate $ unBRSubDiv s
 
-      chipSubDivisors ∷ ChipType → [BRSubDiv Int]
+      chipSubDivisors :: ChipType -> [BRSubDiv Int]
       chipSubDivisors ChipType_AM = [0, 1, 2, 4]
       chipSubDivisors _           = [0..7]
 
 -- |Calculates the baud rate from a divisor and a subdivisor.
-calcBaudRate ∷ (Eq α, Fractional α) ⇒ BRDiv Int → BRSubDiv α → BaudRate α
+calcBaudRate :: (Eq a, Fractional a) => BRDiv Int -> BRSubDiv a -> BaudRate a
 calcBaudRate 0 0 = maxBound
 calcBaudRate 1 0 = 2000000
-calcBaudRate d s = maxBound ÷ BaudRate (realToFrac d + unBRSubDiv s)
+calcBaudRate d s = maxBound / BaudRate (realToFrac d + unBRSubDiv s)
