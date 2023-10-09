@@ -23,31 +23,50 @@ jobs:
       uses: actions/checkout@v3
 
     - name: Setup Haskell
-      uses: haskell/actions/setup@v2
+      uses: haskell-actions/setup@v2
+      id: setup
       with:
         ghc-version: ${{ matrix.ghc }}
         cabal-version: ${{ matrix.cabal }}
 
-    - name: Install dependencies
+    - name: Install Ubuntu dependencies
       run: |
         sudo apt-get update
         sudo apt-get install libusb-1.0-0-dev
 
-    - name: Freeze
-      run: cabal freeze --enable-tests
+    - name: configure
+      run: |
+        cabal configure --enable-tests --enable-benchmarks --enable-documentation
+        cabal build --dry-run
 
-    - name: Cache ~/.cabal/packages, ~/.cabal/store and dist-newstyle
-      uses: actions/cache@v3
+    - name: restore cached dependencies
+      uses: actions/cache/restore@v3
+      id: cache
+      env:
+        key: ${{ runner.os }}-ghc-${{ steps.setup.outputs.ghc-version }}-cabal-${{ steps.setup.outputs.cabal-version }}
       with:
-        path: |
-          ~/.cabal/packages
-          ~/.cabal/store
-          dist-newstyle
-        key: ${{ runner.os }}-${{ matrix.ghc }}-${{ hashFiles('**/*.cabal', '**/cabal.project', '**/cabal.project.freeze') }}
-        restore-keys: ${{ runner.os }}-${{ matrix.ghc }}-
+        path: ${{ steps.setup.outputs.cabal-store }}
+        key: ${{ env.key }}-plan-${{ hashFiles('**/plan.json') }}
+        restore-keys: ${{ env.key }}-
 
-    - name: Build
-      run: cabal build --enable-tests
+    - name: build haskell dependencies
+      run: cabal build all --only-dependencies
 
-    - name: Test
-      run: cabal test
+    - name: save cached dependencies
+      uses: actions/cache/save@v3
+      if: ${{ steps.cache.outputs.cache-primary-key != steps.cache.outputs.cache-matched-key }}
+      with:
+        path: ${{ steps.setup.outputs.cabal-store }}
+        key: ${{ steps.cache.outputs.cache-primary-key }}
+
+    - name: build
+      run: cabal build all
+
+    - name: test
+      run: cabal test all
+
+    - name: check
+      run: cabal check
+
+    - name: documentation
+      run: cabal haddock all
