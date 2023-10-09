@@ -36,7 +36,7 @@ jobs:
 
     - name: configure
       run: |
-        cabal configure --enable-tests --enable-benchmarks --enable-documentation
+        cabal configure --enable-tests --enable-benchmarks --disable-documentation
         cabal build --dry-run
 
     - name: restore cached dependencies
