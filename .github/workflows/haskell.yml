@@ -2,9 +2,9 @@ name: Haskell CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [ main ]
   pull_request:
-    branches: [ master ]
+    branches: [ main ]
   schedule:
     # run at the start of every day
     - cron: '0 0 * * *'
@@ -15,19 +15,17 @@ jobs:
     strategy:
       matrix:
         ghc: ['9.0']
-        cabal: ['3.10']
         os: [ubuntu-20.04]
-    name: ${{ matrix.os }} GHC ${{ matrix.ghc }} Cabal ${{ matrix.cabal }}
+    name: ${{ matrix.os }} GHC ${{ matrix.ghc }}
     steps:
     - name: Checkout
-      uses: actions/checkout@v3
+      uses: actions/checkout@v4
 
     - name: Setup Haskell
       uses: haskell-actions/setup@v2
       id: setup
       with:
         ghc-version: ${{ matrix.ghc }}
-        cabal-version: ${{ matrix.cabal }}
 
     - name: Install Ubuntu dependencies
       run: |
