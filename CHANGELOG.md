@@ -1,5 +1,10 @@
 # Revision history for ftdi
 
+## 0.3.0.3 -- 2024-06-01
+
+* Remove base-unicode-symbols
+* Update dependency bounds
+
 ## 0.3.0.2 -- 2021-09-25
 
 * Update README with code samples and additional resources
