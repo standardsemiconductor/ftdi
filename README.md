@@ -1,7 +1,6 @@
 # FTDI
 [![Haskell CI](https://github.com/standardsemiconductor/ftdi/actions/workflows/haskell.yml/badge.svg)](https://github.com/standardsemiconductor/ftdi/actions/workflows/haskell.yml)
 [![Hackage][hackage-badge]][hackage]
-[![Hackage Dependencies][hackage-deps-badge]][hackage-deps]
 
 This library enables you to communicate with FTDI USB devices. It is implemented as a lightweight wrapper around the [usb](https://hackage.haskell.org/package/usb) library.
 
@@ -83,5 +82,3 @@ withFTDI vendorId productId action = findUSBDevice vendorId productId >>= \case
 
 [hackage]:            <https://hackage.haskell.org/package/ftdi>
 [hackage-badge]:      <https://img.shields.io/hackage/v/ftdi.svg?color=success>
-[hackage-deps-badge]: <https://img.shields.io/hackage-deps/v/ftdi.svg>
-[hackage-deps]:       <http://packdeps.haskellers.com/feed?needle=ftdi>
