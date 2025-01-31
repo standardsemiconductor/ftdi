@@ -1,5 +1,5 @@
 name:          ftdi
-version:       0.3.0.3
+version:       0.3.0.4
 cabal-version: >=1.10
 build-type:    Simple
 stability:     experimental
@@ -22,8 +22,8 @@ source-repository head
 library
   exposed-modules: System.FTDI
                  , System.FTDI.MPSSE
-  other-modules: System.FTDI.Internal
-               , System.FTDI.Utils
+                 , System.FTDI.Internal
+  other-modules: System.FTDI.Utils
   build-depends: async                >= 2.2   && < 2.3
                , base                 >= 4.5   && < 4.21
                , bytestring           >= 0.10  && < 0.13
