@@ -3,6 +3,7 @@
 
 module System.FTDI.Properties where
 
+import Control.Applicative
 import Control.Arrow
 import Data.Bits
 import Data.Word
