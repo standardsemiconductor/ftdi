@@ -1,5 +1,10 @@
 # Revision history for ftdi
 
+## 0.3.0.4 -- 2025-02-18
+
+* Export `System.FTDI.Internal`
+* Update dependency bounds
+
 ## 0.3.0.3 -- 2024-06-01
 
 * Remove base-unicode-symbols
