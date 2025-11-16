@@ -3,7 +3,9 @@ version:       0.3.0.4
 cabal-version: >=1.10
 build-type:    Simple
 stability:     experimental
-author:        Roel van Dijk <vandijk.roel@gmail.com>, Ben Gamari <ben@smart-cactus.org>, David Cox <standardsemiconductor@gmail.com>
+author:        Roel van Dijk <vandijk.roel@gmail.com>,
+               Ben Gamari <ben@smart-cactus.org>,
+               David Cox <standardsemiconductor@gmail.com>
 maintainer:    David Cox <standardsemiconductor@gmail.com
 copyright:     (c) 2009, 2010 Roel van Dijk, (c) 2018 Ben Gamari, (c) 2021-2025 David Cox
 license:       BSD3
@@ -54,3 +56,14 @@ test-suite test
                , transformers
                , usb
                , vector
+
+executable ftdi
+  ghc-options:      -Wall -O2 -threaded
+  main-is:          Main.hs
+  hs-source-dirs:   exe
+  default-language: Haskell2010
+  build-depends:
+      base
+    , ftdi
+    , optparse-applicative
+    , usb
