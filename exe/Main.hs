@@ -4,6 +4,9 @@ import Options.Applicative
 import System.FTDI
 import qualified System.USB as USB
 
+main :: IO ()
+main = ftdi =<< runCli
+
 newtype Cli = SetBaudCmd SetBaud
 
 data SetBaud
@@ -12,10 +15,7 @@ data SetBaud
       USB.ProductId
       ChipType
       Interface
-      Integer -- ^ baud rate
-
-main :: IO ()
-main = ftdi =<< runCli
+      Integer -- baud rate
 
 runCli :: IO Cli
 runCli = customExecParser prefs' $ info (cliParser <**> helper) mempty
