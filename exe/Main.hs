@@ -111,22 +111,20 @@ setBaud iface baud dev =
 
 renderUsbDeviceDesc :: USB.DeviceDesc -> String
 renderUsbDeviceDesc d =
-  unlines $ "USB Device Descriptor" : map (" " <>) rest
-  where
-    rest =
-      [ "Specification  : " <> show (USB.deviceUSBSpecReleaseNumber d)
-      , "Class          : " <> show (USB.deviceClass d)
-      , "SubClass       : " <> show (USB.deviceSubClass d)
-      , "Protocol       : " <> show (USB.deviceProtocol d)
-      , "Max packet size: " <> show (USB.deviceMaxPacketSize0 d)
-      , "Vendor ID      : " <> hex16 (USB.deviceVendorId d)
-      , "Product ID     : " <> hex16 (USB.deviceProductId d)
-      , "Release        : " <> show (USB.deviceReleaseNumber d)
-      , "Manufacture    : " <> show (USB.deviceManufacturerStrIx d)
-      , "Product        : " <> show (USB.deviceProductStrIx d)
-      , "Serial         : " <> show (USB.deviceSerialNumberStrIx d)
-      , "Configs        : " <> show (USB.deviceNumConfigs d)
-      ]
+  unlines $ "USB Device Descriptor" : map (" " <>)
+    [ "Specification  : " <> show (USB.deviceUSBSpecReleaseNumber d)
+    , "Class          : " <> show (USB.deviceClass d)
+    , "SubClass       : " <> show (USB.deviceSubClass d)
+    , "Protocol       : " <> show (USB.deviceProtocol d)
+    , "Max packet size: " <> show (USB.deviceMaxPacketSize0 d)
+    , "Vendor ID      : " <> hex16 (USB.deviceVendorId d)
+    , "Product ID     : " <> hex16 (USB.deviceProductId d)
+    , "Release        : " <> show (USB.deviceReleaseNumber d)
+    , "Manufacture    : " <> show (USB.deviceManufacturerStrIx d)
+    , "Product        : " <> show (USB.deviceProductStrIx d)
+    , "Serial         : " <> show (USB.deviceSerialNumberStrIx d)
+    , "Configs        : " <> show (USB.deviceNumConfigs d)
+    ]
 
 hex16 :: Word16 -> String
 hex16 w16 = "0x" <> showHex w16 ""
