@@ -63,15 +63,16 @@ baudParser :: Parser Integer
 baudParser = option auto $ long "baud" <> help "Baud rate"
 
 ftdi :: Cli -> IO ()
-ftdi (SetBaudCmd (SetBaud vid pid chipType iface baud)) =
-  setBaud iface baud =<< findFtdiDevice vid pid chipType
+ftdi (SetBaudCmd (SetBaud vid pid chipType iface baud)) = do
+  dev <- findFtdiDevice chipType $ match vid pid
+  setBaud iface baud dev
 
-findFtdiDevice :: USB.ProductId -> USB.VendorId -> ChipType -> IO Device
-findFtdiDevice vid pid chipType = do
+findFtdiDevice :: ChipType -> (USB.DeviceDesc -> Bool) -> IO Device
+findFtdiDevice chipType p = do
   deviceDescs <- getDeviceDescs
-  case filter (matchDevice vid pid . snd) deviceDescs of
-    []       -> error "no device found"
-    (d, _):_ -> fromUSBDevice d chipType
+  case filter (p . snd) deviceDescs of
+    []  -> error "no ftdi device found"
+    d:_ -> fromUSBDevice (fst d) chipType
 
 getDeviceDescs :: IO [(USB.Device, USB.DeviceDesc)]
 getDeviceDescs = do
@@ -79,8 +80,8 @@ getDeviceDescs = do
   deviceDescs <- mapM USB.getDeviceDesc devices
   return $ zip devices deviceDescs
 
-matchDevice :: USB.VendorId -> USB.ProductId -> USB.DeviceDesc -> Bool
-matchDevice vid pid desc =
+match :: USB.VendorId -> USB.ProductId -> USB.DeviceDesc -> Bool
+match vid pid desc =
   USB.deviceVendorId  desc == vid &&
   USB.deviceProductId desc == pid
 
