@@ -74,7 +74,7 @@ ftdi cli = case cli of
   SetBaudCmd (SetBaud vid pid chipTypeM iface baud) ->
     setBaud iface baud =<< findFtdiDevice chipTypeM (match vid pid)
   ListUsbCmd ->
-    putStrLn . unlines . map (renderUsbDeviceDesc . snd) =<< getDeviceDescs
+    putStrLn . unlines . map (prettyDeviceDesc . snd) =<< getDeviceDescs
 
 findFtdiDevice :: Maybe ChipType -> (USB.DeviceDesc -> Bool) -> IO Device
 findFtdiDevice chipTypeM p = do
@@ -109,8 +109,8 @@ setBaud iface baud dev =
     baud' <- setBaudRate iHndl $ fromIntegral baud :: IO (BaudRate Double)
     putStrLn $ "set baud rate: " <> show baud'
 
-renderUsbDeviceDesc :: USB.DeviceDesc -> String
-renderUsbDeviceDesc d =
+prettyDeviceDesc :: USB.DeviceDesc -> String
+prettyDeviceDesc d =
   unlines $ "USB Device Descriptor" : map (" " <>)
     [ "Specification  : " <> show (USB.deviceUSBSpecReleaseNumber d)
     , "Class          : " <> show (USB.deviceClass d)
