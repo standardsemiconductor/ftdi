@@ -1,4 +1,6 @@
 import Data.Foldable
+import Data.Word
+import Numeric
 import Options.Applicative
 import System.FTDI
 import qualified System.USB as USB
@@ -6,7 +8,9 @@ import qualified System.USB as USB
 main :: IO ()
 main = ftdi =<< runCli
 
-newtype Cli = SetBaudCmd SetBaud
+data Cli
+  = SetBaudCmd SetBaud
+  | ListUsbCmd
 
 data SetBaud
   = SetBaud
@@ -24,6 +28,9 @@ runCli = customExecParser prefs' $ info (cliParser <**> helper) mempty
 cliParser :: Parser Cli
 cliParser = hsubparser $ mconcat
   [ command "set-baud" $ info (SetBaudCmd <$> setBaudParser) mempty
+  , command "list-usb" $
+      info (pure ListUsbCmd) $
+        progDesc "List USB device descriptors"
   ]
 
 setBaudParser :: Parser SetBaud
@@ -63,9 +70,11 @@ baudParser :: Parser Integer
 baudParser = option auto $ long "baud" <> help "Baud rate"
 
 ftdi :: Cli -> IO ()
-ftdi (SetBaudCmd (SetBaud vid pid chipTypeM iface baud)) = do
-  dev <- findFtdiDevice chipTypeM $ match vid pid
-  setBaud iface baud dev
+ftdi cli = case cli of
+  SetBaudCmd (SetBaud vid pid chipTypeM iface baud) ->
+    setBaud iface baud =<< findFtdiDevice chipTypeM (match vid pid)
+  ListUsbCmd ->
+    putStrLn . unlines . map (renderUsbDeviceDesc . snd) =<< getDeviceDescs
 
 findFtdiDevice :: Maybe ChipType -> (USB.DeviceDesc -> Bool) -> IO Device
 findFtdiDevice chipTypeM p = do
@@ -99,3 +108,25 @@ setBaud iface baud dev =
     putStrLn $ "setting baud rate: " <> show baud
     baud' <- setBaudRate iHndl $ fromIntegral baud :: IO (BaudRate Double)
     putStrLn $ "set baud rate: " <> show baud'
+
+renderUsbDeviceDesc :: USB.DeviceDesc -> String
+renderUsbDeviceDesc d =
+  unlines $ "USB Device Descriptor" : map (" " <>) rest
+  where
+    rest =
+      [ "Specification  : " <> show (USB.deviceUSBSpecReleaseNumber d)
+      , "Class          : " <> show (USB.deviceClass d)
+      , "SubClass       : " <> show (USB.deviceSubClass d)
+      , "Protocol       : " <> show (USB.deviceProtocol d)
+      , "Max packet size: " <> show (USB.deviceMaxPacketSize0 d)
+      , "Vendor ID      : " <> hex16 (USB.deviceVendorId d)
+      , "Product ID     : " <> hex16 (USB.deviceProductId d)
+      , "Release        : " <> show (USB.deviceReleaseNumber d)
+      , "Manufacture    : " <> show (USB.deviceManufacturerStrIx d)
+      , "Product        : " <> show (USB.deviceProductStrIx d)
+      , "Serial         : " <> show (USB.deviceSerialNumberStrIx d)
+      , "Configs        : " <> show (USB.deviceNumConfigs d)
+      ]
+
+hex16 :: Word16 -> String
+hex16 w16 = "0x" <> showHex w16 ""
