@@ -1,4 +1,3 @@
-import Control.Monad
 import Data.Foldable
 import Options.Applicative
 import System.FTDI
@@ -64,18 +63,26 @@ baudParser :: Parser Integer
 baudParser = option auto $ long "baud" <> help "Baud rate"
 
 ftdi :: Cli -> IO ()
-ftdi (SetBaudCmd (SetBaud vid pid chipType iface baud)) = do
-  devices <- USB.getDevices =<< USB.newCtx
-  selects <- filterM (selectDevice vid pid) $ toList devices
-  case selects of
-    []    -> putStrLn "No device found"
-    dev:_ -> setBaud iface baud =<< fromUSBDevice dev chipType
+ftdi (SetBaudCmd (SetBaud vid pid chipType iface baud)) =
+  setBaud iface baud =<< findFtdiDevice vid pid chipType
 
-selectDevice :: USB.VendorId -> USB.ProductId -> USB.Device -> IO Bool
-selectDevice vid pid dev = do
-  desc <- USB.getDeviceDesc dev
-  return $ USB.deviceVendorId desc == vid
-           && USB.deviceProductId desc == pid
+findFtdiDevice :: USB.ProductId -> USB.VendorId -> ChipType -> IO Device
+findFtdiDevice vid pid chipType = do
+  deviceDescs <- getDeviceDescs
+  case filter (matchDevice vid pid . snd) deviceDescs of
+    []       -> error "no device found"
+    (d, _):_ -> fromUSBDevice d chipType
+
+getDeviceDescs :: IO [(USB.Device, USB.DeviceDesc)]
+getDeviceDescs = do
+  devices     <- fmap toList $ USB.getDevices =<< USB.newCtx
+  deviceDescs <- mapM USB.getDeviceDesc devices
+  return $ zip devices deviceDescs
+
+matchDevice :: USB.VendorId -> USB.ProductId -> USB.DeviceDesc -> Bool
+matchDevice vid pid desc =
+  USB.deviceVendorId  desc == vid &&
+  USB.deviceProductId desc == pid
 
 setBaud :: Interface -> Integer -> Device -> IO ()
 setBaud iface baud dev =
