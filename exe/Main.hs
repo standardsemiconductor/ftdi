@@ -57,8 +57,7 @@ ftdi (SetBaudRate vid pid chipType iface baud) = do
   selects <- filterM (selectDevice vid pid) $ toList devices
   case selects of
     []    -> putStrLn "No device found"
-    [dev] -> setBaud iface baud =<< fromUSBDevice dev chipType
-    _     -> putStrLn "More than one device found"
+    dev:_ -> setBaud iface baud =<< fromUSBDevice dev chipType
 
 selectDevice :: USB.VendorId -> USB.ProductId -> USB.Device -> IO Bool
 selectDevice vid pid dev = do
